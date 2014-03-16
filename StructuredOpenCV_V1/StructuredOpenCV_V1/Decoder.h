@@ -61,6 +61,12 @@ public:
 		const Matx34d& P,
 		const Matx34d& P1,
 		vector<Point3d>& pointcloud);
+	bool TestTriangulation(const vector<Point3d>& pcloud, const Matx34d& P, vector<uchar>& status);
+	Mat_<double> IterativeLinearLSTriangulation(Point3d u,	//homogenous image point (u,v,1)
+		Matx34d P,			//camera 1 matrix
+		Point3d u1,			//homogenous image point in 2nd camera
+		Matx34d P1			//camera 2 matrix
+		);
 	Mat m_m3DPoints;
 
 
