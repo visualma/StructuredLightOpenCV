@@ -362,31 +362,6 @@ void CDecoder::Generate3Dpoints(Mat& k)
 
   }
 
-Mat_<double> CDecoder::LinearLSTriangulation(
-	Point3d u,//homogenous image point (u,v,1)
-	Matx34d P,//camera 1 matrix
-	Point3d u1,//homogenous image point in 2nd camera
-	Matx34d P1//camera 2 matrix
-	)
-{
-	//build A matrix
-	Matx43d A(u.x*P(2, 0) - P(0, 0), u.x*P(2, 1) - P(0, 1), u.x*P(2, 2) - P(0, 2),
-		u.y*P(2, 0) - P(1, 0), u.y*P(2, 1) - P(1, 1), u.y*P(2, 2) - P(1, 2),
-		u1.x*P1(2, 0) - P1(0, 0), u1.x*P1(2, 1) - P1(0, 1), u1.x*P1(2, 2) - P1(0, 2),
-		u1.y*P1(2, 0) - P1(1, 0), u1.y*P1(2, 1) - P1(1, 1), u1.y*P1(2, 2) - P1(1, 2)
-		);
-	//build B vector
-	Matx41d B(-(u.x*P(2, 3) - P(0, 3)),
-		-(u.y*P(2, 3) - P(1, 3)),
-		-(u1.x*P1(2, 3) - P1(0, 3)),
-		-(u1.y*P1(2, 3) - P1(1, 3)));
-
-	//solve for X
-	Mat_<double> X;
-	solve(A, B, X, DECOMP_SVD);
-
-	return X;
-}
 
 double CDecoder::TriangulatePoints(
 	const vector<Point2f>& pt_set1,
@@ -558,7 +533,7 @@ double TriangulatePoints1(const vector<KeyPoint>& pt_set1,
 		Mat_<double> um1 = Kinv * Mat_<double>(u1);
 		u1.x = um1(0); u1.y = um1(1); u1.z = um1(2);
 
-		Mat_<double> X = IterativeLinearLSTriangulation(u, P, u1, P1);
+		Mat_<double> X = CDecoder::IterativeLinearLSTriangulation(u, P, u1, P1);
 
 		//		cout << "3D Point: " << X << endl;
 		//		Mat_<double> x = Mat(P1) * X;
@@ -574,8 +549,8 @@ double TriangulatePoints1(const vector<KeyPoint>& pt_set1,
 			double reprj_err = norm(xPt_img_ - kp1);
 			reproj_error.push_back(reprj_err);
 
-			CloudPoint cp;
-			cp.pt = Point3d(X(0), X(1), X(2));
+			Point3d cp;
+			cp = Point3d(X(0), X(1), X(2));
 			cp.reprojection_error = reprj_err;
 
 			pointcloud.push_back(cp);
@@ -619,7 +594,7 @@ Mat_<double> IterativeLinearLSTriangulation(Point3d u,	//homogenous image point 
 	double wi = 1, wi1 = 1;
 	Mat_<double> X(4,1); 
 	for (int i=0; i<10; i++) { //Hartley suggests 10 iterations at most
-		Mat_<double> X_ = LinearLSTriangulation(u,P,u1,P1);
+		Mat_<double> X_ = CDecoder::LinearLSTriangulation(u,P,u1,P1);
 		X(0) = X_(0); X(1) = X_(1); X(2) = X_(2); X(3) = 1.0;
 
 		//recalculate weights
@@ -687,5 +662,44 @@ Mat_<double> CDecoder::IterativeLinearLSTriangulation(Point3d u,	//homogenous im
 		solve(A, B, X_, DECOMP_SVD);
 		X(0) = X_(0); X(1) = X_(1); X(2) = X_(2); X(3) = 1.0;
 	}
+	return X;
+}
+
+Mat_<double> CDecoder::LinearLSTriangulation(Point3d u,		//homogenous image point (u,v,1)
+	Matx34d P,		//camera 1 matrix
+	Point3d u1,		//homogenous image point in 2nd camera
+	Matx34d P1		//camera 2 matrix
+	)
+{
+
+	//build matrix A for homogenous equation system Ax = 0
+	//assume X = (x,y,z,1), for Linear-LS method
+	//which turns it into a AX = B system, where A is 4x3, X is 3x1 and B is 4x1
+	//	cout << "u " << u <<", u1 " << u1 << endl;
+	//	Matx<double,6,4> A; //this is for the AX=0 case, and with linear dependence..
+	//	A(0) = u.x*P(2)-P(0);
+	//	A(1) = u.y*P(2)-P(1);
+	//	A(2) = u.x*P(1)-u.y*P(0);
+	//	A(3) = u1.x*P1(2)-P1(0);
+	//	A(4) = u1.y*P1(2)-P1(1);
+	//	A(5) = u1.x*P(1)-u1.y*P1(0);
+	//	Matx43d A; //not working for some reason...
+	//	A(0) = u.x*P(2)-P(0);
+	//	A(1) = u.y*P(2)-P(1);
+	//	A(2) = u1.x*P1(2)-P1(0);
+	//	A(3) = u1.y*P1(2)-P1(1);
+	Matx43d A(u.x*P(2, 0) - P(0, 0), u.x*P(2, 1) - P(0, 1), u.x*P(2, 2) - P(0, 2),
+		u.y*P(2, 0) - P(1, 0), u.y*P(2, 1) - P(1, 1), u.y*P(2, 2) - P(1, 2),
+		u1.x*P1(2, 0) - P1(0, 0), u1.x*P1(2, 1) - P1(0, 1), u1.x*P1(2, 2) - P1(0, 2),
+		u1.y*P1(2, 0) - P1(1, 0), u1.y*P1(2, 1) - P1(1, 1), u1.y*P1(2, 2) - P1(1, 2)
+		);
+	Matx41d B(-(u.x*P(2, 3) - P(0, 3)),
+		-(u.y*P(2, 3) - P(1, 3)),
+		-(u1.x*P1(2, 3) - P1(0, 3)),
+		-(u1.y*P1(2, 3) - P1(1, 3)));
+
+	Mat_<double> X;
+	solve(A, B, X, DECOMP_SVD);
+
 	return X;
 }
