@@ -1,9 +1,8 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "Capturador.h"
-#include <Windows.h>
 #include <string>
 #include <sstream>
-#include "wtypes.h"
+//#include "wtypes.h"
 #include <iostream>
 #include <fstream>
 void delay(int secs) {
@@ -52,7 +51,7 @@ bool CCapturador::CapturePatterns(int time)
 	int nPatterns = 0;
 	namedWindow("Camera", 1);
 	namedWindow("Patrones", CV_WINDOW_FULLSCREEN);
-
+/*
 	HWND win_handle = FindWindow(0, L"Patrones");
 	if (!win_handle)
 	{
@@ -72,16 +71,16 @@ bool CCapturador::CapturePatterns(int time)
 	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
 	ShowWindow(win_handle, SW_SHOW);
 	cvMoveWindow("Patrones", 0, 0);
-
-	auto A = GetTickCount();
-	auto B = GetTickCount();
+*/
+    long A = getTickCount();
+    long B = getTickCount();
 	for (int i = 0;;)
 	{
 		imshow("Patrones", m_vPatterns[i]);
 		Mat frame;
 		cap >> frame;
 		imshow("Camera", frame);
-		B = GetTickCount();
+        B = getTickCount();
 		int C = B - A;
 		if (C>time || waitKey(30) >= 0)
 		{
@@ -109,7 +108,7 @@ bool CCapturador::CapturePatternsUndisorted(Mat& CameraMatrix,Mat& DistMatrix,in
 	int nPatterns = 0;
 	namedWindow("Camera", 1);
 	namedWindow("Patrones", CV_WINDOW_FULLSCREEN);
-
+/*
 	HWND win_handle = FindWindow(0, L"Patrones");
 	if (!win_handle)
 	{
@@ -129,8 +128,9 @@ bool CCapturador::CapturePatternsUndisorted(Mat& CameraMatrix,Mat& DistMatrix,in
 	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
 	ShowWindow(win_handle, SW_SHOW);
 	cvMoveWindow("Patrones", 0, 0);
-	auto A = GetTickCount();
-	auto B = GetTickCount();
+    */
+    long A = getTickCount();
+    long B = getTickCount();
 	bool start = false;
 	for (int i = 0;;)
 	{
@@ -145,13 +145,13 @@ bool CCapturador::CapturePatternsUndisorted(Mat& CameraMatrix,Mat& DistMatrix,in
 			frame.size(), CV_16SC2, map1, map2);
 		remap(frame, rview, map1, map2, INTER_LINEAR);
 		imshow("Camera", rview);
-		B = GetTickCount();
+        B = getTickCount();
 		int C = B - A;
 		if ((C>time&&start) || waitKey(30) >= 0)
 		{
 			start = true;
 			cout << "time = " << C << endl;
-			A = GetTickCount();
+            A = getTickCount();
 			i++;
 			Mat capture = frame.clone();
 			Mat gray;
@@ -256,7 +256,7 @@ m_nNumFringes(numFringes),
 m_bPhase(fringes)
 {
 	m_nBasePatterns = numPatterns;
-	GetDesktopResolution(m_nScreenWidth, m_nScreenHeight);
+    //GetDesktopResolution(m_nScreenWidth, m_nScreenHeight);
 	m_nFringeInterval = 1;
 	m_fProjectorCenter = 0.5;
 }
@@ -268,7 +268,7 @@ int COptions::GetNumBits(int dir)
 	else
 		return  ceilf(logf(m_nWidth) / logf(2));
 }
-
+/*
 void COptions::GetDesktopResolution(int& horizontal, int& vertical)
 {
 	RECT desktop;
@@ -282,3 +282,4 @@ void COptions::GetDesktopResolution(int& horizontal, int& vertical)
 	horizontal = desktop.right;
 	vertical = desktop.bottom;
 }
+*/

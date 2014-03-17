@@ -6,6 +6,8 @@
 #include "CameraCalibrator.h"
 #include "MatrixUtil.h"
 
+
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -15,19 +17,20 @@ MainWindow::MainWindow(QWidget *parent) :
     string ruta = "Patterns/pattern-0";
     CCameraCalibrator* cal = new CCameraCalibrator();
     Mat dist, camera;
-    //cal->Calibrate("in_calib.xml", camera, dist);
-    cal->GetCalibrationFromFile("out_camera_data3.xml", camera, dist);
-
+    //cal->Calibrate("..//resources//in_calib.xml", camera, dist);
+    cal->GetCalibrationFromFile("..//resources//out_camera_data4.xml", camera, dist);
+    cout<<endl<<Mat(camera)<<endl;
     CCapturador* cap = new CCapturador(options,ruta);
 
     //cap->CapturePatternsUndisorted(camera,dist,250);
 
-    cap->LoadCapturesFromFilesUndisorted("Captures/V4GP/Capture-",camera,dist);
-    //cap->LoadCapturesFromFiles("Patterns/pattern-0");
+    //cap->LoadCapturesFromFilesUndisorted("..//resources//Captures/V4GP/Capture-",camera,dist);
+    cap->LoadCapturesFromFiles("..//resources//Captures/V4GP/Capture-");
     CDecoder* decoder = new CDecoder(options, cap->m_vCaptures);
     decoder->Decode();
-    decoder->Calibrate(camera,dist);
-//	decoder->Generate3Dpoints(camera);
+    if(decoder->Calibrate(camera,dist))
+        if(!decoder->Generate3Dpoints(camera,dist))
+            cout<<"Error no se pudo generar nube de puntos."<<endl;
     cvWaitKey();
 }
 

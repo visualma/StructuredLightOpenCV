@@ -12,6 +12,13 @@ TARGET = StructuredLight_QT_V1
 TEMPLATE = app
 
 INCLUDEPATH += /usr/local/include/opencv
+# \                 /usr/include/eigen3/ \
+#                 /usr/include/pcl-1.7/ \
+#                 /usr/include/vtk-5.8/ \
+#                 /usr/include/boost/ \
+#                 /usr/include/flann \
+#                 /usr/lib/
+
 LIBS += -L/usr/local/lib
 LIBS += -lopencv_core
 LIBS += -lopencv_imgproc
@@ -25,6 +32,12 @@ LIBS += -lopencv_contrib
 LIBS += -lopencv_legacy
 LIBS += -lopencv_flann
 LIBS += -lopencv_nonfree
+#LIBS += -lQtGui -lQtCore -lQtOpenGL \
+#        -lpcl_registration -lpcl_sample_consensus -lpcl_features -lpcl_filters -lpcl_surface -lpcl_segmentation \
+#        -lpcl_search -lpcl_kdtree -lpcl_octree -lflann_cpp -lpcl_common -lpcl_io \
+#        -lpcl_visualization \
+#        -L/usr/lib -lvtkCommon -lvtksys -lvtkQtChart -lvtkViews -lvtkWidgets  -lvtkRendering -lvtkGraphics -lvtkImaging -lvtkIO -lvtkFiltering -lvtkDICOMParser -lvtkmetaio -lvtkexoIIc -lvtkHybrid \
+#        -L/usr/lib -lboost_thread
 
 SOURCES += main.cpp\
         mainwindow.cpp \

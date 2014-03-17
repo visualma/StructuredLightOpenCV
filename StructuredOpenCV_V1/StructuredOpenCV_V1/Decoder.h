@@ -1,5 +1,5 @@
 #include "Capturador.h"
-#include <pcl\common\common.h>
+//#include "pcl/common/common.h"
 #pragma once
 
 #define M_E        2.71828182845904523536
@@ -16,6 +16,22 @@
 #define M_SQRT2    1.41421356237309504880
 #define M_SQRT1_2  0.707106781186547524401
 
+//using namespace pcl;
+
+class CloudPoint : Point3f
+{
+public:
+    float reprojection_error;
+    CloudPoint(Point3f a,float r_e)
+    {
+        this->x = a.x;
+        this->y = a.y;
+        this->z = a.z;
+        this->reprojection_error = r_e;
+    }
+};
+
+
 class CDecoder
 {
 	COptions* m_Info;
@@ -23,17 +39,17 @@ class CDecoder
 	vector<Mat> m_vGrayError[2];
 	vector<Mat> m_vGrayMap;
 	vector<Point2f> m_vCorrespondencePoints[2];
-	vector<Point3d> m_vPointCloud;
+    vector<Point3f> m_vPointCloud;
 	Mat m_mMask[2];
 	Mat m_mGrayError[2];
 	Mat m_mGray[2];
 	Mat m_mPhaseError[2];
 	Mat m_mPhaseMap[2];
 	Mat m_mFundamentalMatrix;
-	Mat m_mEssentialMatrix;
+    Mat_<double> m_mEssentialMatrix;
 	float m_fDivisor[2];
 	Matx34d m_mProjectorProjection;
-	Matx34d m_mCameraProjection;
+    Matx34d m_mCameraProjection;
 public:
 	CDecoder(COptions* Options, vector<Mat>& vCaptures);
 	bool Decode();
@@ -45,13 +61,14 @@ public:
 	void UnwrapPhase(Mat& phase, int period, Mat& reference, Mat& result, Mat& unwrap_error);
 	void CreateReliableMap(int dir);
 	void BuildCorrespondence(Mat* grays);
-	void Calibrate(Mat& CameraMatrix, Mat& DistMatrix);
+    bool Calibrate(Mat& CameraMatrix, Mat& DistMatrix);
 	void EstimateIntrinsics(Mat& fundamental);
-	void Generate3Dpoints(Mat& output);
+
+    bool Generate3Dpoints(Mat& output,Mat& distCoef);
 	static Mat_<double> LinearLSTriangulation(
-		Point3d u,//homogenous image point (u,v,1)
+        Point3f u,//homogenous image point (u,v,1)
 		Matx34d P,//camera 1 matrix
-		Point3d u1,//homogenous image point in 2nd camera
+        Point3f u1,//homogenous image point in 2nd camera
 		Matx34d P1//camera 2 matrix
 		);
 	double TriangulatePoints(
@@ -61,16 +78,28 @@ public:
 		const Mat&Kinv,
 		const Matx34d& P,
 		const Matx34d& P1,
-		vector<Point3d>& pointcloud);
-	bool TestTriangulation(const vector<Point3d>& pcloud, const Matx34d& P, vector<uchar>& status);
-	static Mat_<double> IterativeLinearLSTriangulation(Point3d u,	//homogenous image point (u,v,1)
+        vector<Point3f>& pointcloud);
+    bool TestTriangulation(const vector<Point3f>& pcloud, const Matx34d& P, vector<uchar>& status);
+    static Mat_<double> IterativeLinearLSTriangulation(Point3f u,	//homogenous image point (u,v,1)
 		Matx34d P,			//camera 1 matrix
-		Point3d u1,			//homogenous image point in 2nd camera
+        Point3f u1,			//homogenous image point in 2nd camera
 		Matx34d P1			//camera 2 matrix
 		);
+    double TriangulatePointsIterative(const vector<Point2f>& pt_set1,
+    const vector<Point2f>& pt_set2,
+    const Mat& K,
+    const Mat& Kinv,
+    const Mat& distcoeff,
+    const Matx34d& P,
+    const Matx34d& P1,
+    vector<Point3f>& pointcloud,
+    vector<Point2f>& correspImg1Pt);
+
 	Mat m_m3DPoints;
 
 
 	~CDecoder();
 };
+
+
 

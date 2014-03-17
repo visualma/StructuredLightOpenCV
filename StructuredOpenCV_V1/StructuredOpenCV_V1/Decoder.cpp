@@ -1,10 +1,6 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "Decoder.h"
-#include "opencv2\gpu\gpu.hpp"
-#include "opencv2\gpu\gpumat.hpp"
 #include "Capturador.h"
-#include "opencv2\stitching\detail\camera.hpp"
-#include "opencv2\stitching\detail\autocalib.hpp"
 #include "MatrixUtil.h"
 #define EPSILON 3.1281928192
 
@@ -26,8 +22,8 @@ bool CDecoder::Decode()
 		m_mMask[0].convertTo(m_mMask[0], CV_16UC1);
 		if (m_Info->m_bPhase)
 		{
-			auto begin = m_vCaptures.begin() + m_Info->m_nNumPatterns / 2;
-			auto end = m_vCaptures.begin() + m_Info->m_nNumPatterns / 2 + m_Info->m_nNumFringes;
+            vector<Mat>::iterator begin = m_vCaptures.begin() + m_Info->m_nNumPatterns / 2;
+            vector<Mat>::iterator end = m_vCaptures.begin() + m_Info->m_nNumPatterns / 2 + m_Info->m_nNumFringes;
 
 			vector<Mat> phaseImgs(begin, end);
 			m_mPhaseMap[0] = DecodePhaseImages(phaseImgs, 0);
@@ -55,8 +51,8 @@ bool CDecoder::Decode()
 		m_mMask[1].convertTo(m_mMask[1], CV_16UC1);
 		if (m_Info->m_bPhase)
 		{
-			auto begin = m_vCaptures.begin() + m_Info->m_nBasePatterns + m_Info->m_nNumPatterns / 2;
-			auto end = m_vCaptures.begin() + m_Info->m_nNumPatterns + m_Info->m_nNumFringes;
+            vector<Mat>::iterator begin = m_vCaptures.begin() + m_Info->m_nBasePatterns + m_Info->m_nNumPatterns / 2;
+            vector<Mat>::iterator end = m_vCaptures.begin() + m_Info->m_nNumPatterns + m_Info->m_nNumFringes;
 
 			vector<Mat> phaseImgs(begin, end);
 			m_mPhaseMap[1] = DecodePhaseImages(phaseImgs, 1);
@@ -222,7 +218,7 @@ void CDecoder::UnwrapPhase(Mat& phase, int period, Mat& reference, Mat& result, 
 		int graycode = reference.at<ushort>(x, y);
 		float moire_phase = phase.at<float>(x, y);
 		float gray_phase = (float)(graycode % period) / period;
-		if (_isnan(moire_phase))
+        if (!moire_phase)
 		{
 			result.at<float>(x, y) = graycode;
 			unwrap_error.at<float>(x, y) = 0.5;
@@ -282,13 +278,48 @@ Mat CDecoder::MaskMat(Mat& img, Mat& mask)
 
 /////////////////////////////////////////// CALIBRATE
 
-void CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
+bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
 {
 	BuildCorrespondence(m_mGray);
-	m_mFundamentalMatrix = findFundamentalMat(m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], FM_RANSAC, 3.0, 0.99);
-
+    double minVal,maxVal;
+    cv::minMaxIdx(m_vCorrespondencePoints[0],&minVal,&maxVal);
+    vector<uchar> status;
+    m_mFundamentalMatrix = findFundamentalMat(m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], FM_RANSAC, 0.006 * maxVal, 0.99, status);
+    cout << "F keeping " << countNonZero(status) << " / " << status.size() << endl;
 	m_mEssentialMatrix = CameraMatrix.t() * m_mFundamentalMatrix * CameraMatrix;
-
+    if(fabsf(determinant(m_mEssentialMatrix)) > 1e-07) {
+        cout << "det(E) != 0 : " << determinant(m_mEssentialMatrix) << "\n";
+        return false;
+    }
+    vector<Point2f> good_points0,good_points1;
+    good_points0 = m_vCorrespondencePoints[0];
+    good_points1 = m_vCorrespondencePoints[1];
+    m_vCorrespondencePoints[0].clear();
+    m_vCorrespondencePoints[1].clear();
+    for(int i=0;i<status.size();i++)
+    {
+        if(status[i])
+        {
+            m_vCorrespondencePoints[0][i] = good_points0[i];
+            m_vCorrespondencePoints[1][i] = good_points1[i];
+        }
+    }
+    Mat img_orig_matches;
+    { //draw original features in red
+        vector<uchar> vstatus(good_points0.size(),1);
+        vector<float> verror(good_points0.size(),1.0);
+        m_vCaptures[0].copyTo(img_orig_matches);
+        CMatrixUtil::drawArrows(img_orig_matches, good_points0, good_points1, vstatus, verror, Scalar(0,0,255));
+    }
+    { //superimpose filtered features in green
+        vector<uchar> vstatus(m_vCorrespondencePoints[0].size(),1);
+        vector<float> verror(m_vCorrespondencePoints[0].size(),1.0);
+        CMatrixUtil::drawArrows(img_orig_matches, m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], vstatus, verror, Scalar(0,255,0));
+        imshow( "Filtered Matches", img_orig_matches );
+    }
+    return true;
+    cout<<"Puntos supervivientes a la matriz fundamental: "<<m_vCorrespondencePoints[0].size()<<"/"<<good_points0.size()<<endl;
+/*
 	SVD svd(m_mEssentialMatrix);
 	Matx33d W(0, -1, 0,//HZ 9.13
 		1, 0, 0,
@@ -324,17 +355,8 @@ void CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
 		cv::Scalar(255, 0, 0));
 	}
 	imshow("imagen", c);
+    */
 }
-
-void CDecoder::EstimateIntrinsics(Mat& fundamental)
-{
-	double f1, f2;
-	//Mat homoProCod = CMatrixUtil::GetHomogeneousMatrix(m_fProCod);
-	//Mat homoCamCod = CMatrixUtil::GetHomogeneousMatrix(m_fCamCod);
-
-	//cout << "alto";
-}
-
 
 void CDecoder::BuildCorrespondence(Mat* grays)
 {
@@ -352,38 +374,112 @@ void CDecoder::BuildCorrespondence(Mat* grays)
 	}
 }
 
-void CDecoder::Generate3Dpoints(Mat& k)
+bool CDecoder::Generate3Dpoints(Mat& k,Mat& distCoef)
 {
-	//triangulatePoints(m_mProjectorProjection,m_mCameraProjection, m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], m_m3DPoints);
-	Mat kInv = k.inv();
-	TriangulatePoints(m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], k, kInv, m_mProjectorProjection, m_mCameraProjection, m_vPointCloud);
-	vector<uchar> abc;
-	cout << endl << "Los puntos fueron creados = " << TestTriangulation(m_vPointCloud, m_mProjectorProjection, abc) << endl;;
+    Mat_<double> R1(3,3);
+    Mat_<double> R2(3,3);
+    Mat_<double> t1(1,3);
+    Mat_<double> t2(1,3);
+    vector<Point2f> corresp;
+    vector<Point3f> pcloud1,pcloud;
+    Matx34d P1,P;
+    if (!CMatrixUtil::DecomposeEtoRandT(m_mEssentialMatrix,R1,R2,t1,t2)) return false;
 
-  }
+    if(determinant(R1)+1.0 < 1e-09)
+    {
+        //according to http://en.wikipedia.org/wiki/Essential_matrix#Showing_that_it_is_valid
+        cout << "det(R) == -1 ["<<determinant(R1)<<"]: flip E's sign" << endl;
+        m_mEssentialMatrix = -m_mEssentialMatrix;
+        CMatrixUtil::DecomposeEtoRandT(m_mEssentialMatrix,R1,R2,t1,t2);
+    }
+
+    if (!CMatrixUtil::CheckCoherentRotation(R1))
+    {
+        cout << "resulting rotation is not coherent\n";
+        return false;
+    }
+    P = Matx34d
+            (1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0);
+    P1 = Matx34d(R1(0,0),	R1(0,1),	R1(0,2),	t1(0),
+    R1(1,0),	R1(1,1),	R1(1,2),	t1(1),
+    R1(2,0),	R1(2,1),	R1(2,2),	t1(2));
+    cout << "Testing P1 " << endl << Mat(P1) << endl;
+    double reproj_error1 = TriangulatePointsIterative(m_vCorrespondencePoints[0],m_vCorrespondencePoints[1],k,k.inv(),distCoef,P,P1,pcloud,corresp);
+    double reproj_error2 = TriangulatePointsIterative(m_vCorrespondencePoints[1],m_vCorrespondencePoints[0],k,k.inv(),distCoef,P1,P,pcloud1,corresp);
+    vector<uchar> tmp_status;
+    if (!TestTriangulation(pcloud,P1,tmp_status) || !TestTriangulation(pcloud1,P,tmp_status) || reproj_error1 > 100.0 || reproj_error2 > 100.0)
+    {
+        P1 = Matx34d(R1(0,0),	R1(0,1),	R1(0,2),	t2(0),
+        R1(1,0),	R1(1,1),	R1(1,2),	t2(1),
+        R1(2,0),	R1(2,1),	R1(2,2),	t2(2));
+        cout << "Testing P1 "<< endl << Mat(P1) << endl;
+
+        pcloud.clear(); pcloud1.clear(); corresp.clear();
+        reproj_error1 = TriangulatePointsIterative(m_vCorrespondencePoints[0],m_vCorrespondencePoints[1],k,k.inv(),distCoef,P,P1,pcloud,corresp);
+        reproj_error2 = TriangulatePointsIterative(m_vCorrespondencePoints[1],m_vCorrespondencePoints[0],k,k.inv(),distCoef,P1,P,pcloud1,corresp);
+        if (!TestTriangulation(pcloud,P1,tmp_status) || !TestTriangulation(pcloud1,P,tmp_status) || reproj_error1 > 100.0 || reproj_error2 > 100.0)
+        {
+            if (!CMatrixUtil::CheckCoherentRotation(R2))
+            {
+                cout << "resulting rotation is not coherent\n";
+                P1 = 0;
+                return false;
+            }
+            P1 = Matx34d(R2(0,0),	R2(0,1),	R2(0,2),	t1(0),
+                            R2(1,0),	R2(1,1),	R2(1,2),	t1(1),
+                            R2(2,0),	R2(2,1),	R2(2,2),	t1(2));
+            cout << "Testing P1 "<< endl << Mat(P1) << endl;
+
+            pcloud.clear(); pcloud1.clear(); corresp.clear();
+            reproj_error1 = TriangulatePointsIterative(m_vCorrespondencePoints[0],m_vCorrespondencePoints[1],k,k.inv(),distCoef,P,P1,pcloud,corresp);
+            reproj_error2 = TriangulatePointsIterative(m_vCorrespondencePoints[1],m_vCorrespondencePoints[0],k,k.inv(),distCoef,P1,P,pcloud1,corresp);
+
+            if (!TestTriangulation(pcloud,P1,tmp_status) || !TestTriangulation(pcloud1,P,tmp_status) || reproj_error1 > 100.0 || reproj_error2 > 100.0)
+            {
+                P1 = Matx34d(R2(0,0),	R2(0,1),	R2(0,2),	t2(0),
+                            R2(1,0),	R2(1,1),	R2(1,2),	t2(1),
+                            R2(2,0),	R2(2,1),	R2(2,2),	t2(2));
+                cout << "Testing P1 "<< endl << Mat(P1) << endl;
+
+                pcloud.clear(); pcloud1.clear(); corresp.clear();
+                reproj_error1 = TriangulatePointsIterative(m_vCorrespondencePoints[0],m_vCorrespondencePoints[1],k,k.inv(),distCoef,P,P1,pcloud,corresp);
+                reproj_error2 = TriangulatePointsIterative(m_vCorrespondencePoints[1],m_vCorrespondencePoints[0],k,k.inv(),distCoef,P1,P,pcloud1,corresp);
+                if (!TestTriangulation(pcloud,P1,tmp_status) || !TestTriangulation(pcloud1,P,tmp_status) || reproj_error1 > 100.0 || reproj_error2 > 100.0) {
+                    cout << "No se lograron resolver las ambiguedades, abortando." << endl;
+                    return false;
+                }
+            }
+        }
+    }
+    for (unsigned int i=0; i<pcloud.size(); i++)
+        m_vPointCloud.push_back(pcloud[i]);
+    return true;
+}
 
 
 double CDecoder::TriangulatePoints(
-	const vector<Point2f>& pt_set1,
-	const vector<Point2f>& pt_set2,
-	const Mat&K,
-	const Mat&Kinv,
-	const Matx34d& P,
-	const Matx34d& P1,
-	vector<Point3d>& pointcloud)
+    const vector<Point2f>& pt_set1,
+    const vector<Point2f>& pt_set2,
+    const Mat&K,
+    const Mat&Kinv,
+    const Matx34d& P,
+    const Matx34d& P1,
+    vector<Point3f>& pointcloud)
 {
 	vector<double> reproj_error;
 	int pts_size = pt_set1.size();
 	for (unsigned int i = 0; i<pts_size; i++) {
 		//convert to normalized homogeneous coordinates
 		Point2f kp = pt_set1[i];
-		Point3d u(kp.x, kp.y, 1.0);
+        Point3f u(kp.x, kp.y, 1.0);
 		Mat_<double> um = Kinv * Mat_<double>(u);
 		u.x = um.at<double>(0);
 		u.y = um.at<double>(1);
 		u.z = um.at<double>(2);
 		Point2f kp1 = pt_set2[i];
-		Point3d u1(kp1.x, kp1.y, 1.0);
+        Point3f u1(kp1.x, kp1.y, 1.0);
 		Mat_<double> um1 = Kinv * Mat_<double>(u1);
 		u1.x = um1.at<double>(0);
 		u1.y = um1.at<double>(1);
@@ -392,14 +488,14 @@ double CDecoder::TriangulatePoints(
 		//triangulate
 		Mat_<double> X = LinearLSTriangulation(u, P, u1, P1);
 
-		//calculate reprojection error
-		//Mat_<double> xPt_img = K * Mat(P1);
+        //calculate reprojection error
+        //Mat_<double> xPt_img = K * Mat(P1);
 		//xPt_img*=X;
 		//Point2f xPt_img_(xPt_img(0) / xPt_img(2), xPt_img(1) / xPt_img(2));
 		//reproj_error.push_back(norm(xPt_img_ - kp1));
 
 		//store 3D point
-		pointcloud.push_back(Point3d(X(0), X(1), X(2)));
+        pointcloud.push_back(Point3f(X(0), X(1), X(2)));
 	}
 
 	//return mean reprojection error
@@ -407,11 +503,10 @@ double CDecoder::TriangulatePoints(
 	return 0;// me[0];
 }
 
-bool CDecoder::TestTriangulation(const vector<Point3d>& pcloud, const Matx34d& P, vector<uchar>& status) {
-	vector<Point3d> pcloud_pt3d = pcloud;
-	vector<Point3d> pcloud_pt3d_projected(pcloud_pt3d.size());
-
-	Matx44d P4x4 = Matx44d::eye();
+bool CDecoder::TestTriangulation(const vector<Point3f>& pcloud, const Matx34d& P, vector<uchar>& status) {
+    vector<Point3f> pcloud_pt3d = pcloud;
+    vector<Point3f> pcloud_pt3d_projected(pcloud_pt3d.size());
+    Matx44d P4x4 = Matx44d::eye();
 	for (int i = 0; i<12; i++) P4x4.val[i] = P.val[i];
 
 	perspectiveTransform(pcloud_pt3d, pcloud_pt3d_projected, P4x4);
@@ -432,7 +527,7 @@ bool CDecoder::TestTriangulation(const vector<Point3d>& pcloud, const Matx34d& P
 	{
 		cv::Mat_<double> cldm(pcloud.size(), 3);
 		for (unsigned int i = 0; i<pcloud.size(); i++) {
-			cldm.row(i)(0) = pcloud[i].x;
+            cldm.row(i)(0) = pcloud[i].x;
 			cldm.row(i)(1) = pcloud[i].y;
 			cldm.row(i)(2) = pcloud[i].z;
 		}
@@ -445,7 +540,7 @@ bool CDecoder::TestTriangulation(const vector<Point3d>& pcloud, const Matx34d& P
 		double p_to_plane_thresh = sqrt(pca.eigenvalues.at<double>(2));
 
 		for (int i = 0; i<pcloud.size(); i++) {
-			Vec3d w = Vec3d(pcloud[i]) - x0;
+            Vec3d w = Vec3d(pcloud[i].x,pcloud[i].y,pcloud[i].z) - x0;
 			double D = fabs(nrm.dot(w));
 			if (D < p_to_plane_thresh) num_inliers++;
 		}
@@ -458,176 +553,143 @@ bool CDecoder::TestTriangulation(const vector<Point3d>& pcloud, const Matx34d& P
 	return true;
 }
 
-double TriangulatePoints1(const vector<KeyPoint>& pt_set1,
-	const vector<KeyPoint>& pt_set2,
-	const Mat& K,
-	const Mat& Kinv,
-	const Mat& distcoeff,
-	const Matx34d& P,
-	const Matx34d& P1,
-	vector<Point3d>& pointcloud,
-	vector<KeyPoint>& correspImg1Pt)
+double CDecoder::TriangulatePointsIterative(const vector<Point2f>& pt_set1,
+const vector<Point2f>& pt_set2,
+const Mat& K,
+const Mat& Kinv,
+const Mat& distcoeff,
+const Matx34d& P,
+const Matx34d& P1,
+vector<Point3f>& pointcloud,
+vector<Point2f>& correspImg1Pt)
 {
-#ifdef __SFM__DEBUG__
-	vector<double> depths;
-#endif
+    #ifdef __SFM__DEBUG__
+    vector<double> depths;
+    #endif
 
-	//	pointcloud.clear();
-	correspImg1Pt.clear();
+    // pointcloud.clear();
+    correspImg1Pt.clear();
 
-	Matx44d P1_(P1(0, 0), P1(0, 1), P1(0, 2), P1(0, 3),
-		P1(1, 0), P1(1, 1), P1(1, 2), P1(1, 3),
-		P1(2, 0), P1(2, 1), P1(2, 2), P1(2, 3),
-		0, 0, 0, 1);
-	Matx44d P1inv(P1_.inv());
+    Matx44d P1_(P1(0,0),P1(0,1),P1(0,2),P1(0,3),
+    P1(1,0),P1(1,1),P1(1,2),P1(1,3),
+    P1(2,0),P1(2,1),P1(2,2),P1(2,3),
+    0,	0,	0,	1);
+    Matx44d P1inv(P1_.inv());
 
-	cout << "Triangulating...";
-	double t = getTickCount();
-	vector<double> reproj_error;
-	unsigned int pts_size = pt_set1.size();
+    cout << "Triangulating...";
+    double t = getTickCount();
+    vector<double> reproj_error;
+    unsigned int pts_size = pt_set1.size();
 
 #if 0
-	//Using OpenCV's triangulation
-	//convert to Point2f
-	vector<Point2f> _pt_set1_pt, _pt_set2_pt;
-	KeyPointsToPoints(pt_set1, _pt_set1_pt);
-	KeyPointsToPoints(pt_set2, _pt_set2_pt);
+    //Using OpenCV's triangulation
+    //convert to Point2f
+    vector<Point2f> _pt_set1_pt,_pt_set2_pt;
+    //KeyPointsToPoints(pt_set1,_pt_set1_pt);
+    //KeyPointsToPoints(pt_set2,_pt_set2_pt);
+    _pt_set1_pt = pt_set1;
+    _pt_set2_pt = pt_set2;
+    //undistort
+    Mat pt_set1_pt,pt_set2_pt;
+    undistortPoints(_pt_set1_pt, pt_set1_pt, K, distcoeff);
+    undistortPoints(_pt_set2_pt, pt_set2_pt, K, distcoeff);
 
-	//undistort
-	Mat pt_set1_pt, pt_set2_pt;
-	undistortPoints(_pt_set1_pt, pt_set1_pt, K, distcoeff);
-	undistortPoints(_pt_set2_pt, pt_set2_pt, K, distcoeff);
+    //triangulate
+    Mat pt_set1_pt_2r = pt_set1_pt.reshape(1, 2);
+    Mat pt_set2_pt_2r = pt_set2_pt.reshape(1, 2);
+    Mat pt_3d_h(1,pts_size,CV_32FC4);
+    cv::triangulatePoints(P,P1,pt_set1_pt_2r,pt_set2_pt_2r,pt_3d_h);
 
-	//triangulate
-	Mat pt_set1_pt_2r = pt_set1_pt.reshape(1, 2);
-	Mat pt_set2_pt_2r = pt_set2_pt.reshape(1, 2);
-	Mat pt_3d_h(1, pts_size, CV_32FC4);
-	cv::triangulatePoints(P, P1, pt_set1_pt_2r, pt_set2_pt_2r, pt_3d_h);
+    //calculate reprojection
+    vector<Point3f> pt_3d;
+    convertPointsHomogeneous(pt_3d_h.reshape(4, 1), pt_3d);
+    cv::Mat_<double> R = (cv::Mat_<double>(3,3) << P(0,0),P(0,1),P(0,2), P(1,0),P(1,1),P(1,2), P(2,0),P(2,1),P(2,2));
+    Vec3d rvec; Rodrigues(R ,rvec);
+    Vec3d tvec(P(0,3),P(1,3),P(2,3));
+    vector<Point2f> reprojected_pt_set1;
+    projectPoints(pt_3d,rvec,tvec,K,distcoeff,reprojected_pt_set1);
 
-	//calculate reprojection
-	vector<Point3f> pt_3d;
-	convertPointsHomogeneous(pt_3d_h.reshape(4, 1), pt_3d);
-	cv::Mat_<double> R = (cv::Mat_<double>(3, 3) << P(0, 0), P(0, 1), P(0, 2), P(1, 0), P(1, 1), P(1, 2), P(2, 0), P(2, 1), P(2, 2));
-	Vec3d rvec; Rodrigues(R, rvec);
-	Vec3d tvec(P(0, 3), P(1, 3), P(2, 3));
-	vector<Point2f> reprojected_pt_set1;
-	projectPoints(pt_3d, rvec, tvec, K, distcoeff, reprojected_pt_set1);
+    for (unsigned int i=0; i<pts_size; i++) {
+        Point3f cp;
+        cp = pt_3d[i];
+        pointcloud.push_back(cp);
+        reproj_error.push_back(norm(_pt_set1_pt[i]-reprojected_pt_set1[i]));
+    }
 
-	for (unsigned int i = 0; i<pts_size; i++) {
-		CloudPoint cp;
-		cp.pt = pt_3d[i];
-		pointcloud.push_back(cp);
-		reproj_error.push_back(norm(_pt_set1_pt[i] - reprojected_pt_set1[i]));
-	}
 #else
-	Mat_<double> KP1 = K * Mat(P1);
+    Mat_<double> KP1 = K * Mat(P1);
+
 #pragma omp parallel for num_threads(1)
-	for (int i = 0; i<pts_size; i++) {
-		Point2f kp = pt_set1[i].pt;
-		Point3d u(kp.x, kp.y, 1.0);
-		Mat_<double> um = Kinv * Mat_<double>(u);
-		u.x = um(0); u.y = um(1); u.z = um(2);
+    for (int i=0; i<pts_size; i++)
+    {
+        Point2f kp = pt_set1[i];
+        Point3f u(kp.x,kp.y,1.0);
+        Mat_<double> um = Kinv * Mat_<double>(u);
+        u.x = um(0); u.y = um(1); u.z = um(2);
 
-		Point2f kp1 = pt_set2[i].pt;
-		Point3d u1(kp1.x, kp1.y, 1.0);
-		Mat_<double> um1 = Kinv * Mat_<double>(u1);
-		u1.x = um1(0); u1.y = um1(1); u1.z = um1(2);
+        Point2f kp1 = pt_set2[i];
+        Point3f u1(kp1.x,kp1.y,1.0);
+        Mat_<double> um1 = Kinv * Mat_<double>(u1);
+        u1.x = um1(0); u1.y = um1(1); u1.z = um1(2);
 
-		Mat_<double> X = CDecoder::IterativeLinearLSTriangulation(u, P, u1, P1);
+        Mat_<double> X = IterativeLinearLSTriangulation(u,P,u1,P1);
 
-		//		cout << "3D Point: " << X << endl;
-		//		Mat_<double> x = Mat(P1) * X;
-		//		cout <<	"P1 * Point: " << x << endl;
-		//		Mat_<double> xPt = (Mat_<double>(3,1) << x(0),x(1),x(2));
-		//		cout <<	"Point: " << xPt << endl;
-		Mat_<double> xPt_img = KP1 * X;				//reproject
-		//		cout <<	"Point * K: " << xPt_img << endl;
-		Point2f xPt_img_(xPt_img(0) / xPt_img(2), xPt_img(1) / xPt_img(2));
+        // cout << "3D Point: " << X << endl;
+        // Mat_<double> x = Mat(P1) * X;
+        // cout << "P1 * Point: " << x << endl;
+        // Mat_<double> xPt = (Mat_<double>(3,1) << x(0),x(1),x(2));
+        // cout << "Point: " << xPt << endl;
+        Mat_<double> xPt_img = KP1 * X;	//reproject
+        // cout << "Point * K: " << xPt_img << endl;
+        Point2f xPt_img_(xPt_img(0)/xPt_img(2),xPt_img(1)/xPt_img(2));
 
-#pragma omp critical
-		{
-			double reprj_err = norm(xPt_img_ - kp1);
-			reproj_error.push_back(reprj_err);
+    #pragma omp critical
+        {
+            double reprj_err = norm(xPt_img_-kp1);
+            reproj_error.push_back(reprj_err);
 
-			Point3d cp;
-			cp = Point3d(X(0), X(1), X(2));
-			cp.reprojection_error = reprj_err;
+            Point3f cp = Point3f(X(0),X(1),X(2));
 
-			pointcloud.push_back(cp);
-			correspImg1Pt.push_back(pt_set1[i]);
-#ifdef __SFM__DEBUG__
-			depths.push_back(X(2));
-#endif
-		}
-	}
-#endif
+            pointcloud.push_back(cp);
+            correspImg1Pt.push_back(pt_set1[i]);
 
-	Scalar mse = mean(reproj_error);
-	t = ((double)getTickCount() - t) / getTickFrequency();
-	cout << "Done. (" << pointcloud.size() << "points, " << t << "s, mean reproj err = " << mse[0] << ")" << endl;
+    #ifdef __SFM__DEBUG__
+            depths.push_back(X(2));
 
-	//show "range image"
-#ifdef __SFM__DEBUG__
-	{
-		double minVal, maxVal;
-		minMaxLoc(depths, &minVal, &maxVal);
-		Mat tmp(240, 320, CV_8UC3, Scalar(0, 0, 0)); //cvtColor(img_1_orig, tmp, CV_BGR2HSV);
-		for (unsigned int i = 0; i<pointcloud.size(); i++) {
-			double _d = MAX(MIN((pointcloud[i].z - minVal) / (maxVal - minVal), 1.0), 0.0);
-			circle(tmp, correspImg1Pt[i].pt, 1, Scalar(255 * (1.0 - (_d)), 255, 255), CV_FILLED);
-		}
-		cvtColor(tmp, tmp, CV_HSV2BGR);
-		imshow("Depth Map", tmp);
-		waitKey(0);
-		destroyWindow("Depth Map");
-	}
+    #endif
+        }
+    }
+
 #endif
 
-	return mse[0];
+    Scalar mse = mean(reproj_error);
+    t = ((double)getTickCount() - t)/getTickFrequency();
+    cout << "Done. ("<<pointcloud.size()<<"points, " << t <<"s, mean reproj err = " << mse[0] << ")"<< endl;
+
+    //show "range image"
+    #ifdef __SFM__DEBUG__
+    {
+        double minVal,maxVal;
+        minMaxLoc(depths, &minVal, &maxVal);
+        Mat tmp(240,320,CV_8UC3,Scalar(0,0,0)); //cvtColor(img_1_orig, tmp, CV_BGR2HSV);
+        for (unsigned int i=0; i<pointcloud.size(); i++) {
+        double _d = MAX(MIN((pointcloud[i].z-minVal)/(maxVal-minVal),1.0),0.0);
+        circle(tmp, correspImg1Pt[i].pt, 1, Scalar(255 * (1.0-(_d)),255,255), CV_FILLED);
+    }
+    cvtColor(tmp, tmp, CV_HSV2BGR);
+    imshow("Depth Map", tmp);
+    waitKey(0);
+    destroyWindow("Depth Map");
+    }
+
+#endif
+
+return mse[0];
 }
 
-Mat_<double> IterativeLinearLSTriangulation(Point3d u,	//homogenous image point (u,v,1)
-											Matx34d P,			//camera 1 matrix
-											Point3d u1,			//homogenous image point in 2nd camera
-											Matx34d P1			//camera 2 matrix
-											) {
-	double wi = 1, wi1 = 1;
-	Mat_<double> X(4,1); 
-	for (int i=0; i<10; i++) { //Hartley suggests 10 iterations at most
-		Mat_<double> X_ = CDecoder::LinearLSTriangulation(u,P,u1,P1);
-		X(0) = X_(0); X(1) = X_(1); X(2) = X_(2); X(3) = 1.0;
-
-		//recalculate weights
-		double p2x = Mat_<double>(Mat_<double>(P).row(2)*X)(0);
-		double p2x1 = Mat_<double>(Mat_<double>(P1).row(2)*X)(0);
-
-		//breaking point
-		if(fabsf(wi - p2x) <= EPSILON && fabsf(wi1 - p2x1) <= EPSILON) break;
-
-		wi = p2x;
-		wi1 = p2x1;
-
-		//reweight equations and solve
-		Matx43d A((u.x*P(2,0)-P(0,0))/wi,		(u.x*P(2,1)-P(0,1))/wi,			(u.x*P(2,2)-P(0,2))/wi,		
-				  (u.y*P(2,0)-P(1,0))/wi,		(u.y*P(2,1)-P(1,1))/wi,			(u.y*P(2,2)-P(1,2))/wi,		
-				  (u1.x*P1(2,0)-P1(0,0))/wi1,	(u1.x*P1(2,1)-P1(0,1))/wi1,		(u1.x*P1(2,2)-P1(0,2))/wi1,	
-				  (u1.y*P1(2,0)-P1(1,0))/wi1,	(u1.y*P1(2,1)-P1(1,1))/wi1,		(u1.y*P1(2,2)-P1(1,2))/wi1
-				  );
-		Mat_<double> B = (Mat_<double>(4,1) <<	  -(u.x*P(2,3)	-P(0,3))/wi,
-												  -(u.y*P(2,3)	-P(1,3))/wi,
-												  -(u1.x*P1(2,3)	-P1(0,3))/wi1,
-												  -(u1.y*P1(2,3)	-P1(1,3))/wi1
-						  );
-
-		solve(A,B,X_,DECOMP_SVD);
-		X(0) = X_(0); X(1) = X_(1); X(2) = X_(2); X(3) = 1.0;
-	}
-	return X;
-}
-
-Mat_<double> CDecoder::IterativeLinearLSTriangulation(Point3d u,	//homogenous image point (u,v,1)
+Mat_<double> CDecoder::IterativeLinearLSTriangulation(Point3f u,	//homogenous image point (u,v,1)
 	Matx34d P,			//camera 1 matrix
-	Point3d u1,			//homogenous image point in 2nd camera
+    Point3f u1,			//homogenous image point in 2nd camera
 	Matx34d P1			//camera 2 matrix
 	) {
 	
@@ -665,9 +727,9 @@ Mat_<double> CDecoder::IterativeLinearLSTriangulation(Point3d u,	//homogenous im
 	return X;
 }
 
-Mat_<double> CDecoder::LinearLSTriangulation(Point3d u,		//homogenous image point (u,v,1)
+Mat_<double> CDecoder::LinearLSTriangulation(Point3f u,		//homogenous image point (u,v,1)
 	Matx34d P,		//camera 1 matrix
-	Point3d u1,		//homogenous image point in 2nd camera
+    Point3f u1,		//homogenous image point in 2nd camera
 	Matx34d P1		//camera 2 matrix
 	)
 {
@@ -703,3 +765,4 @@ Mat_<double> CDecoder::LinearLSTriangulation(Point3d u,		//homogenous image poin
 
 	return X;
 }
+
