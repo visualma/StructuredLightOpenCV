@@ -18,14 +18,14 @@ MainWindow::MainWindow(QWidget *parent) :
     CCameraCalibrator* cal = new CCameraCalibrator();
     Mat dist, camera;
     //cal->Calibrate("..//resources//in_calib.xml", camera, dist);
-    cal->GetCalibrationFromFile("..//resources//out_camera_data4.xml", camera, dist);
+    cal->GetCalibrationFromFile("..//resources//out_camera_data3.xml", camera, dist);
     cout<<endl<<Mat(camera)<<endl;
     CCapturador* cap = new CCapturador(options,ruta);
 
     //cap->CapturePatternsUndisorted(camera,dist,250);
 
-    //cap->LoadCapturesFromFilesUndisorted("..//resources//Captures/V4GP/Capture-",camera,dist);
-    cap->LoadCapturesFromFiles("..//resources//Captures/V4GP/Capture-");
+    cap->LoadCapturesFromFilesUndisorted("..//resources//Captures/V4GP/Capture-",camera,dist);
+    //cap->LoadCapturesFromFiles("..//resources//Captures/V4GP/Capture-");
     CDecoder* decoder = new CDecoder(options, cap->m_vCaptures);
     decoder->Decode();
     if(decoder->Calibrate(camera,dist))

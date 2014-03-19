@@ -280,13 +280,19 @@ Mat CDecoder::MaskMat(Mat& img, Mat& mask)
 
 bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
 {
+    k_cam = CameraMatrix;
+    double data[] = {1250,0,0.5*m_Info->m_nWidth,
+                     0, 1250,0.5*m_Info->m_nHeight,
+                     0, 0, 1};
+    k_proj = Mat(3,3,CV_64FC1,data);
+    cout<<"k_proj: "<<k_proj<<endl;
 	BuildCorrespondence(m_mGray);
     double minVal,maxVal;
     cv::minMaxIdx(m_vCorrespondencePoints[0],&minVal,&maxVal);
     vector<uchar> status;
     m_mFundamentalMatrix = findFundamentalMat(m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], FM_RANSAC, 0.006 * maxVal, 0.99, status);
     cout << "F keeping " << countNonZero(status) << " / " << status.size() << endl;
-	m_mEssentialMatrix = CameraMatrix.t() * m_mFundamentalMatrix * CameraMatrix;
+    m_mEssentialMatrix = k_proj.t() * m_mFundamentalMatrix * k_cam;
     if(fabsf(determinant(m_mEssentialMatrix)) > 1e-07) {
         cout << "det(E) != 0 : " << determinant(m_mEssentialMatrix) << "\n";
         return false;
@@ -300,11 +306,12 @@ bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
     {
         if(status[i])
         {
-            m_vCorrespondencePoints[0][i] = good_points0[i];
-            m_vCorrespondencePoints[1][i] = good_points1[i];
+            m_vCorrespondencePoints[0].push_back(good_points0[i]);
+            m_vCorrespondencePoints[1].push_back(good_points1[i]);
         }
     }
     Mat img_orig_matches;
+   /*
     { //draw original features in red
         vector<uchar> vstatus(good_points0.size(),1);
         vector<float> verror(good_points0.size(),1.0);
@@ -316,9 +323,9 @@ bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
         vector<float> verror(m_vCorrespondencePoints[0].size(),1.0);
         CMatrixUtil::drawArrows(img_orig_matches, m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], vstatus, verror, Scalar(0,255,0));
         imshow( "Filtered Matches", img_orig_matches );
-    }
-    return true;
+    }*/
     cout<<"Puntos supervivientes a la matriz fundamental: "<<m_vCorrespondencePoints[0].size()<<"/"<<good_points0.size()<<endl;
+    return true;
 /*
 	SVD svd(m_mEssentialMatrix);
 	Matx33d W(0, -1, 0,//HZ 9.13

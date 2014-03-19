@@ -171,7 +171,7 @@ bool CCapturador::SerializeCaptures(vector<Mat> imagenes,string str,bool b16)
 {
  	int tiempo = time(NULL);
 	std::ostringstream oss1;
-	oss1 << "cd Captures & mkdir "<<str<<"-" << tiempo;
+    oss1 << "cd ..//resources//Captures & mkdir "<<str<<"-" << tiempo;
 	system(oss1.str().c_str());
 	for (int i = 0; i < imagenes.size(); i++)
 	{

@@ -225,6 +225,7 @@ public:
 		fs2["calibration_Time"] >> date;
 		fs2["Camera_Matrix"] >> cam;
 		fs2["Distortion_Coefficients"] >> dist;
+        cout<<"Camera Intrinsics:"<<endl<<cam<<endl<<"Distorcion Coeficients:"<<endl<<dist<<endl;
 	}
 	void Calibrate(string inputSettings, Mat& cameraMatrix, Mat& distCoeffs)
 	{

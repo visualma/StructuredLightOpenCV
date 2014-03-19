@@ -50,6 +50,7 @@ class CDecoder
 	float m_fDivisor[2];
 	Matx34d m_mProjectorProjection;
     Matx34d m_mCameraProjection;
+    Mat_<double> k_cam,k_proj;
 public:
 	CDecoder(COptions* Options, vector<Mat>& vCaptures);
 	bool Decode();
