@@ -286,7 +286,8 @@ bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
     double minVal,maxVal;
     cv::minMaxIdx(m_vCorrespondencePoints[0],&minVal,&maxVal);
     vector<uchar> status;
-    m_mFundamentalMatrix = findFundamentalMat(m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], FM_RANSAC, 0.006 * maxVal, 0.99, status);
+    m_mFundamentalMatrix = findFundamentalMat(m_vCorrespondencePoints[1], m_vCorrespondencePoints[0], FM_RANSAC, 0.006 * maxVal, 0.99, status);
+    cout << "Fundamental Matrix: "<<m_mFundamentalMatrix<<endl;
     cout << "F keeping " << countNonZero(status) << " / " << status.size() << endl;
 
     vector<Point2f> good_points0,good_points1;
@@ -294,29 +295,17 @@ bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
     good_points1 = m_vCorrespondencePoints[1];
     m_vCorrespondencePoints[0].clear();
     m_vCorrespondencePoints[1].clear();
+    Mat img_orig_matches = Mat(768,1024,CV_8UC1);
     for(int i=0;i<status.size();i++)
     {
         if(status[i])
         {
             m_vCorrespondencePoints[0].push_back(good_points0[i]);
             m_vCorrespondencePoints[1].push_back(good_points1[i]);
+            img_orig_matches.at<uchar>(good_points1[i].y,good_points1[i].x) = 255;
         }
     }
-    Mat img_orig_matches;
-   /*
-    { //draw original features in red
-        vector<uchar> vstatus(good_points0.size(),1);
-        vector<float> verror(good_points0.size(),1.0);
-        m_vCaptures[0].copyTo(img_orig_matches);
-        CMatrixUtil::drawArrows(img_orig_matches, good_points0, good_points1, vstatus, verror, Scalar(0,0,255));
-    }
-    { //superimpose filtered features in green
-        vector<uchar> vstatus(m_vCorrespondencePoints[0].size(),1);
-        vector<float> verror(m_vCorrespondencePoints[0].size(),1.0);
-        CMatrixUtil::drawArrows(img_orig_matches, m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], vstatus, verror, Scalar(0,255,0));
-        imshow( "Filtered Matches", img_orig_matches );
-    }*/
-    cout<<"Puntos supervivientes a la matriz fundamental: "<<m_vCorrespondencePoints[0].size()<<"/"<<good_points0.size()<<endl;
+    cv::imshow("matches",img_orig_matches);
     return true;
 /*
 	SVD svd(m_mEssentialMatrix);
@@ -385,13 +374,13 @@ bool CDecoder::Generate3Dpoints(Mat& k,Mat& distCoef)
 
     k_cam = k;
 
-    for(double a = 1000;a<2500.0;a++)
+    for(double a = 0;a<2500.0;a++)
     {
-        double data[] = {a,0,0.5*m_Info->m_nWidth,
-                         0, a,0.5*m_Info->m_nHeight,
+        double data[] = {a,0,0.5*1024,
+                         0, a,0.5*768,
                          0, 0, 1};
         k_proj = Mat(3,3,CV_64FC1,data);
-        m_mEssentialMatrix = k_proj.t() * m_mFundamentalMatrix * k_cam;
+        m_mEssentialMatrix = k_cam.t() * m_mFundamentalMatrix * k_proj;
         if(fabsf(determinant(m_mEssentialMatrix)) < 1e-07 && CMatrixUtil::DecomposeEtoRandT(m_mEssentialMatrix,R1,R2,t1,t2)) {
             cout<<"esta";
             break;
@@ -432,6 +421,12 @@ bool CDecoder::Generate3Dpoints(Mat& k,Mat& distCoef)
     P1 = Matx34d(R1(0,0),	R1(0,1),	R1(0,2),	t1(0),
     R1(1,0),	R1(1,1),	R1(1,2),	t1(1),
     R1(2,0),	R1(2,1),	R1(2,2),	t1(2));
+    vector<Point2f> newPoints0,newPoints1;
+    correctMatches(m_mFundamentalMatrix,m_vCorrespondencePoints[1],m_vCorrespondencePoints[0],newPoints1,newPoints0);
+    m_vCorrespondencePoints[0] = newPoints0;
+    m_vCorrespondencePoints[1] = newPoints1;
+    vector<Mat> output;
+    //triangulatePoints(k_proj,k_cam,m_vCorrespondencePoints[1],m_vCorrespondencePoints[0],output);
     cout << "Testing P1 " << endl << Mat(P1) << endl;
     double reproj_error1 = TriangulatePointsIterative(m_vCorrespondencePoints[0],m_vCorrespondencePoints[1],k,k.inv(),distCoef,P,P1,pcloud,corresp);
     double reproj_error2 = TriangulatePointsIterative(m_vCorrespondencePoints[1],m_vCorrespondencePoints[0],k,k.inv(),distCoef,P1,P,pcloud1,corresp);

@@ -1,7 +1,7 @@
 //#include "stdafx.h"
 #include "MatrixUtil.h"
 
-//#define DECOMPOSE_SVD
+#define DECOMPOSE_SVD
 #define intrpmnmx(val,min,max) (max==min ? 0.0 : ((val)-min)/(max-min))
 CMatrixUtil::CMatrixUtil()
 {

@@ -27,8 +27,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //cap->CapturePatternsUndisorted(camera,dist,250);
 
-    //cap->LoadCapturesFromFilesUndisorted("..//resources//Captures/V4GP/Capture-",camera,dist);
-    cap->LoadCapturesFromFiles("..//resources//Captures/V4GP/Capture-");
+    cap->LoadCapturesFromFilesUndisorted("..//resources//Captures/V4GP/Capture-",camera,dist);
+    //cap->LoadCapturesFromFiles("..//resources//Captures/V4GP/Capture-");
     CDecoder* decoder = new CDecoder(options, cap->m_vCaptures);
     decoder->Decode();
     if(decoder->Calibrate(camera,dist))
