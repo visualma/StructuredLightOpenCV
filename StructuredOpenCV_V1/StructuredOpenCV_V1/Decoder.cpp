@@ -280,11 +280,7 @@ Mat CDecoder::MaskMat(Mat& img, Mat& mask)
 
 bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
 {
-    k_cam = CameraMatrix;
-    double data[] = {1250,0,0.5*m_Info->m_nWidth,
-                     0, 1250,0.5*m_Info->m_nHeight,
-                     0, 0, 1};
-    k_proj = Mat(3,3,CV_64FC1,data);
+
     cout<<"k_proj: "<<k_proj<<endl;
 	BuildCorrespondence(m_mGray);
     double minVal,maxVal;
@@ -292,11 +288,7 @@ bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
     vector<uchar> status;
     m_mFundamentalMatrix = findFundamentalMat(m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], FM_RANSAC, 0.006 * maxVal, 0.99, status);
     cout << "F keeping " << countNonZero(status) << " / " << status.size() << endl;
-    m_mEssentialMatrix = k_proj.t() * m_mFundamentalMatrix * k_cam;
-    if(fabsf(determinant(m_mEssentialMatrix)) > 1e-07) {
-        cout << "det(E) != 0 : " << determinant(m_mEssentialMatrix) << "\n";
-        return false;
-    }
+
     vector<Point2f> good_points0,good_points1;
     good_points0 = m_vCorrespondencePoints[0];
     good_points1 = m_vCorrespondencePoints[1];
@@ -390,8 +382,36 @@ bool CDecoder::Generate3Dpoints(Mat& k,Mat& distCoef)
     vector<Point2f> corresp;
     vector<Point3f> pcloud1,pcloud;
     Matx34d P1,P;
-    if (!CMatrixUtil::DecomposeEtoRandT(m_mEssentialMatrix,R1,R2,t1,t2)) return false;
 
+    k_cam = k;
+
+    for(double a = 1000;a<2500.0;a++)
+    {
+        double data[] = {a,0,0.5*m_Info->m_nWidth,
+                         0, a,0.5*m_Info->m_nHeight,
+                         0, 0, 1};
+        k_proj = Mat(3,3,CV_64FC1,data);
+        m_mEssentialMatrix = k_proj.t() * m_mFundamentalMatrix * k_cam;
+        if(fabsf(determinant(m_mEssentialMatrix)) < 1e-07 && CMatrixUtil::DecomposeEtoRandT(m_mEssentialMatrix,R1,R2,t1,t2)) {
+            cout<<"esta";
+            break;
+        }
+        else
+            cout << "det(E) != 0 : " << determinant(m_mEssentialMatrix) << " "<<a<<"\n";
+    }
+
+/*
+      double data[] = {1000,0,0.5*m_Info->m_nWidth,
+                 0, 1000,0.5*m_Info->m_nHeight,
+                 0, 0, 1};
+    k_proj = Mat(3,3,CV_64FC1,data);
+    m_mEssentialMatrix = k_proj.t() * m_mFundamentalMatrix * k_cam;
+    if(fabsf(determinant(m_mEssentialMatrix)) > 1e-07) {
+        cout << "det(E) != 0 : " << determinant(m_mEssentialMatrix) << "\n";
+        return false;
+    }
+    if (!CMatrixUtil::DecomposeEtoRandT(m_mEssentialMatrix,R1,R2,t1,t2)) return false;
+*/
     if(determinant(R1)+1.0 < 1e-09)
     {
         //according to http://en.wikipedia.org/wiki/Essential_matrix#Showing_that_it_is_valid

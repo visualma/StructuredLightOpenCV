@@ -1,7 +1,7 @@
 //#include "stdafx.h"
 #include "MatrixUtil.h"
 
-#define DECOMPOSE_SVD
+//#define DECOMPOSE_SVD
 #define intrpmnmx(val,min,max) (max==min ? 0.0 : ((val)-min)/(max-min))
 CMatrixUtil::CMatrixUtil()
 {
@@ -149,15 +149,16 @@ Mat_<double>& t2)
     //Using HZ E decomposition
     Mat svd_u, svd_vt, svd_w;
     TakeSVDOfE(E,svd_u,svd_vt,svd_w);
-
+    cout<<"svd_w = "<<svd_w<<endl;
     //check if first and second singular values are the same (as they should be)
+   // svd_w.at<double>(1) = svd_w.at<double>(0);
     double singular_values_ratio = fabsf(svd_w.at<double>(0) / svd_w.at<double>(1));
 
     if(singular_values_ratio>1.0) singular_values_ratio = 1.0/singular_values_ratio; // flip ratio to keep it [0,1]
 
     if (singular_values_ratio < 0.7)
     {
-        cout << "singular values are too far apart\n";
+        cout << "singular values are too far apart" <<singular_values_ratio<<" \n";
         return false;
     }
 
@@ -205,9 +206,9 @@ void CMatrixUtil::TakeSVDOfE(Mat_<double>& E, Mat& svd_u, Mat& svd_vt, Mat& svd_
     svd_w = (Mat_<double>(1,3) << svd.singularValues()[0] , svd.singularValues()[1] , svd.singularValues()[2]);
 #endif
 
-    cout << "----------------------- SVD ------------------------\n";
-    cout << "U:\n"<<svd_u<<"\nW:\n"<<svd_w<<"\nVt:\n"<<svd_vt<<endl;
-    cout << "----------------------------------------------------\n";
+    //cout << "----------------------- SVD ------------------------\n";
+   // cout << "U:\n"<<svd_u<<"\nW:\n"<<svd_w<<"\nVt:\n"<<svd_vt<<endl;
+   // cout << "----------------------------------------------------\n";
 }
 
 void CMatrixUtil::drawArrows(Mat& frame, const vector<Point2f>& prevPts, const vector<Point2f>& nextPts, const vector<uchar>& status, const vector<float>& verror, const Scalar& _line_color)

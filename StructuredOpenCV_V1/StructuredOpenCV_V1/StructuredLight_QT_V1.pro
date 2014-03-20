@@ -53,3 +53,6 @@ HEADERS  += mainwindow.h \
     MatrixUtil.h
 
 FORMS    += mainwindow.ui
+
+OTHER_FILES += \
+    in_calib.xml

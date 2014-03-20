@@ -813,6 +813,44 @@ mainwindow.o: ../StructuredOpenCV_V1/mainwindow.cpp ../StructuredOpenCV_V1/mainw
 		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qtabwidget.h \
 		/opt/Qt/5.2.1/gcc_64/include/QtGui/qicon.h \
 		ui_mainwindow.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtCore/QVariant \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/QAction \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qaction.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qactiongroup.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/QApplication \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qapplication.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtCore/qcoreapplication.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtCore/qeventloop.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qdesktopwidget.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtGui/qguiapplication.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtGui/qinputmethod.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/QButtonGroup \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qbuttongroup.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/QHeaderView \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qheaderview.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qabstractitemview.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qabstractscrollarea.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qframe.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtCore/qabstractitemmodel.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtCore/qitemselectionmodel.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qabstractitemdelegate.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qstyleoption.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qabstractspinbox.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtGui/qvalidator.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtCore/qregularexpression.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qslider.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qabstractslider.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qstyle.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qtabbar.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qrubberband.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/QMenuBar \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qmenubar.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qmenu.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/QStatusBar \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qstatusbar.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/QToolBar \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/qtoolbar.h \
+		/opt/Qt/5.2.1/gcc_64/include/QtWidgets/QWidget \
 		../StructuredOpenCV_V1/Capturador.h \
 		../StructuredOpenCV_V1/Decoder.h \
 		../StructuredOpenCV_V1/CameraCalibrator.h \
