@@ -19,6 +19,8 @@ MainWindow::MainWindow(QWidget *parent) :
     Mat dist, camera;
     //cal->Calibrate("..//resources//in_calib.xml", camera, dist);
     cal->GetCalibrationFromFile("..//resources//out_camera_data3.xml", camera, dist);
+    cout.setf(ios::fixed,ios::floatfield);
+    cout.precision(3);
     cout<<endl<<Mat(camera)<<endl;
     //camera.at<double>(0,0) = camera.at<double>(0,0)*0.8;
     //camera.at<double>(1,1) = camera.at<double>(1,1)*0.8;

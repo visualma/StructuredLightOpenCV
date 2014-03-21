@@ -144,12 +144,14 @@ Mat_<double>& R2,
 Mat_<double>& t1,
 Mat_<double>& t2)
 {
-
+cout<<"E = "<<E<<endl;
 #ifdef DECOMPOSE_SVD
     //Using HZ E decomposition
     Mat svd_u, svd_vt, svd_w;
     TakeSVDOfE(E,svd_u,svd_vt,svd_w);
     cout<<"svd_w = "<<svd_w<<endl;
+    cout<<"svd_u = "<<svd_u<<endl;
+    cout<<"svd_vt = "<<svd_vt<<endl;
     //check if first and second singular values are the same (as they should be)
    // svd_w.at<double>(1) = svd_w.at<double>(0);
     double singular_values_ratio = fabsf(svd_w.at<double>(0) / svd_w.at<double>(1));

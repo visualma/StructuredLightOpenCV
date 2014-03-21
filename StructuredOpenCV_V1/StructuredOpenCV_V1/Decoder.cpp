@@ -286,7 +286,7 @@ bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
     double minVal,maxVal;
     cv::minMaxIdx(m_vCorrespondencePoints[0],&minVal,&maxVal);
     vector<uchar> status;
-    m_mFundamentalMatrix = findFundamentalMat(m_vCorrespondencePoints[1], m_vCorrespondencePoints[0], FM_RANSAC, 0.006 * maxVal, 0.99, status);
+    m_mFundamentalMatrix = findFundamentalMat(m_vCorrespondencePoints[0], m_vCorrespondencePoints[1], FM_RANSAC, 0.006 * maxVal, 0.99, status);
     cout << "Fundamental Matrix: "<<m_mFundamentalMatrix<<endl;
     cout << "F keeping " << countNonZero(status) << " / " << status.size() << endl;
 
@@ -300,14 +300,24 @@ bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
     {
         if(status[i])
         {
-            m_vCorrespondencePoints[0].push_back(good_points0[i]);
-            m_vCorrespondencePoints[1].push_back(good_points1[i]);
+            m_vCorrespondencePoints[1].push_back(good_points0[i]);
+            m_vCorrespondencePoints[0].push_back(good_points1[i]);
             img_orig_matches.at<uchar>(good_points1[i].y,good_points1[i].x) = 255;
         }
     }
     cv::imshow("matches",img_orig_matches);
-    return true;
 /*
+    double data[] = {1000,0,0.5*1024,
+                   0, 1000,0.5*768,
+                   0, 0, 1};
+    k_proj = Mat(3,3,CV_64FC1,data);
+    k_cam = CameraMatrix;
+    m_mEssentialMatrix = k_cam.t() * m_mFundamentalMatrix * k_cam;
+    if(fabsf(determinant(m_mEssentialMatrix)) > 1e-07) {
+        cout << "det(E) != 0 : " << determinant(m_mEssentialMatrix) << "\n";
+        return false;
+    }
+
 	SVD svd(m_mEssentialMatrix);
 	Matx33d W(0, -1, 0,//HZ 9.13
 		1, 0, 0,
@@ -330,10 +340,10 @@ bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
 	if (!CMatrixUtil::CheckCoherentRotation(R)) {
 		cout << "resulting rotation is not coherent\n";
 		m_mCameraProjection = 0;
-		return;
+        return false;
 	}
 	vector<Vec3f> lines1;
-	computeCorrespondEpilines(m_vCorrespondencePoints[0], 1, m_mFundamentalMatrix, lines1);
+    computeCorrespondEpilines(m_vCorrespondencePoints[0], 0, m_mFundamentalMatrix, lines1);
 	Mat c = m_vCaptures[0].clone();
 	for (int i = 0; i<lines1.size() ;i+=1000) {
 		Vec3f it = lines1[i];
@@ -344,6 +354,7 @@ bool CDecoder::Calibrate(Mat& CameraMatrix,Mat& DistMatrix)
 	}
 	imshow("imagen", c);
     */
+    return true;
 }
 
 void CDecoder::BuildCorrespondence(Mat* grays)
@@ -374,7 +385,7 @@ bool CDecoder::Generate3Dpoints(Mat& k,Mat& distCoef)
 
     k_cam = k;
 
-    for(double a = 0;a<2500.0;a++)
+    for(double a = 1000;a<1001.0;a++)
     {
         double data[] = {a,0,0.5*1024,
                          0, a,0.5*768,
@@ -388,7 +399,6 @@ bool CDecoder::Generate3Dpoints(Mat& k,Mat& distCoef)
         else
             cout << "det(E) != 0 : " << determinant(m_mEssentialMatrix) << " "<<a<<"\n";
     }
-
 /*
       double data[] = {1000,0,0.5*m_Info->m_nWidth,
                  0, 1000,0.5*m_Info->m_nHeight,
@@ -408,7 +418,7 @@ bool CDecoder::Generate3Dpoints(Mat& k,Mat& distCoef)
         m_mEssentialMatrix = -m_mEssentialMatrix;
         CMatrixUtil::DecomposeEtoRandT(m_mEssentialMatrix,R1,R2,t1,t2);
     }
-
+    cout<<"R1"<<R1<<endl<<"R2"<<R2<<endl<<"t2"<<t1<<endl<<"t2"<<t2<<endl;
     if (!CMatrixUtil::CheckCoherentRotation(R1))
     {
         cout << "resulting rotation is not coherent\n";
