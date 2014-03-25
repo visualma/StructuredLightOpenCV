@@ -30,9 +30,6 @@
     <ClInclude Include="Decoder.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="MatrixUtil.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
     <ClInclude Include="CameraCalibrator.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>

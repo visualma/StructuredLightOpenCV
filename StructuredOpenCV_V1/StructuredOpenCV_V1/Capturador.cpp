@@ -1,4 +1,4 @@
-//#include "stdafx.h"
+#include "stdafx.h"
 #include "Capturador.h"
 #include <string>
 #include <sstream>
