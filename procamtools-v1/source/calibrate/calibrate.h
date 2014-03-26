@@ -375,7 +375,7 @@ private:
 	options_t m_options;
 	slib::Field<2,slib::CVector<2,double>> m_match;
 	slib::Field<2,float> m_mask;
-	
+public:
 	// output
 	slib::CMatrix<3,3,double> m_cam_int;
 	slib::CMatrix<3,3,double> m_pro_int;

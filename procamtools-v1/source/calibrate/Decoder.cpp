@@ -81,8 +81,10 @@ bool CDecoder::Decode()
 			m_mPhaseError[0].at<float>(x, y) = std::min(m_mPhaseError[0].at<float>(x, y), m_mPhaseError[1].at<float>(x, y));
 		}
 	}
+	m_mGray[0] = MaskMat(m_mGray[0], m_mMask[0]);
+	m_mGray[1] = MaskMat(m_mGray[1], m_mMask[0]);
 	temp.push_back(m_mMask[0]);
-	cap.SerializeCaptures(temp, "mask", true);
+	cap.SerializeCaptures(temp, "mask");
 	return true;
 }
 

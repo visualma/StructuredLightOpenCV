@@ -47,10 +47,7 @@ bool CCapturador::CapturePatterns(int time)
 {
 	VideoCapture cap(0); // open the default camera
 	if (!cap.isOpened())  // check if we succeeded
-	{
-		cout << "Error: No camera connected." << endl;
 		return -1;
-	}
 	bool bMakeCapture = false;
 	int nPatterns = 0;
 	namedWindow("Camera", 1);
@@ -75,21 +72,20 @@ bool CCapturador::CapturePatterns(int time)
 	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
 	ShowWindow(win_handle, SW_SHOW);
 	cvMoveWindow("Patrones", 0, 0);
-
-    long A = GetTickCount();
-    long B = GetTickCount();
+	//cvWaitKey(5000);
+	auto A = GetTickCount();
+	auto B = GetTickCount();
 	for (int i = 0;;)
 	{
 		imshow("Patrones", m_vPatterns[i]);
 		Mat frame;
 		cap >> frame;
 		imshow("Camera", frame);
-        B = GetTickCount();
+		B = GetTickCount();
 		int C = B - A;
 		if (C>time || waitKey(30) >= 0)
 		{
-			A = GetTickCount();
-			cout << "time = " << C << endl;
+			//cout << "time = " << C << endl;
 			i++;
 			Mat capture = frame.clone();
 			Mat gray;
@@ -97,10 +93,12 @@ bool CCapturador::CapturePatterns(int time)
 			m_vCaptures.push_back(gray);
 			if (++nPatterns >= m_nPatterns)
 				break;
+			A = GetTickCount();
 		};
 	}
 	cout << "Patrones capturados." << endl;
-	SerializeCaptures(m_vCaptures, "CasaV1", true);
+	cvDestroyWindow("Patrones");
+	cvDestroyWindow("Camera");
 	return true;
 }
 
@@ -167,33 +165,35 @@ bool CCapturador::CapturePatternsUndisorted(Mat& CameraMatrix,Mat& DistMatrix,in
 		};
 	}
 	cout << "Patrones capturados." << endl;
-	SerializeCaptures(m_vCaptures, "CasaV1", true);
 	cvDestroyWindow("Patrones");
 	return true;
 }
 
-bool CCapturador::SerializeCaptures(vector<Mat> imagenes,string str,bool b16)
+string CCapturador::SerializeCaptures(vector<Mat> imagenes,string str)
 {
- 	int tiempo = time(NULL);
+	int tiempo = time(NULL);
 	std::ostringstream oss1;
-    oss1 << "cd ..//resources//Captures & mkdir "<<str<<"-" << tiempo;
+	oss1 << "cd .. & cd resources & cd Captures & mkdir " << str << "-" << tiempo;
 	system(oss1.str().c_str());
+	string rutafinal;
+	std::ostringstream oss3;
+	oss3 << "..//resources//Captures//" << str << "-" << tiempo;
 	for (int i = 0; i < imagenes.size(); i++)
 	{
 		std::ostringstream oss;
-		string ruta = "Captures/";
+		string ruta = "..//resources//Captures//";
 		if (i<10)
-			oss << ruta << str << "-" << tiempo << "/Capture-0" << i << ".bmp";
+			oss << ruta << str << "-" << tiempo << "//Capture-0" << i << ".bmp";
 		else
-			oss << ruta << str << "-" << tiempo << "/Capture-" << i << ".bmp";
+			oss << ruta << str << "-" << tiempo << "//Capture-" << i << ".bmp";
 		ruta = oss.str();
 		//if (b16)
 		//	cvSave(oss.str().c_str(),  imagenes[i].data);
 		imagenes[i].convertTo(imagenes[i], CV_8UC1);
-			imwrite(oss.str(),  imagenes[i]);
+		imwrite(oss.str(), imagenes[i]);
 		oss.clear();
 	}
-	return true;
+	return oss3.str();
 }
 
 bool CCapturador::LoadCapturesFromFiles(string ruta)

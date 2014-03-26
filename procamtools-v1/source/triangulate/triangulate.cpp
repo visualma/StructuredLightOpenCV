@@ -22,14 +22,14 @@ struct options_t options;
 using namespace slib;
 
 // output filename
-static char *m_plyfilename = "mesh.ply";
+std::string m_plyfilename = "mesh.ply";
 
 // filename of optional vertical correspondence 
-static char *m_vmapfilename = 0;
+static char *m_vmapfilename = "123";
 
 static float m_max_edge_length = 0.1;
 static float m_distortion_angle = 1;
-static bool m_debug = false;
+static bool m_debug = true;
 
 bool distorted(const int v1,const int v2,const int v3,const std::vector<CVector<3,double>>& result) 
 {
@@ -166,10 +166,15 @@ int set_options(int argc, char *argv[])
 }
 
 // entry point
-int main(int argc, char* argv[])
+int makeTriangulation(options_t options, Field<2, float> horizontal, Field<2, float> vertical, Field<2, float> mask, CMatrix<3, 3,
+	double> matKpro, CMatrix<3, 3, double>  matKcam,
+	CMatrix<3, 4, double> proRt, double xi1,double xi2,std::string meshName)
 {
+	m_plyfilename = meshName;
+	printf("Angulo de distorcion: %f, se guadara en %s", m_distortion_angle,m_plyfilename);
 	try
 	{
+		/*
 		// parse commandline options
 		int argi = set_options(argc, argv);
 
@@ -177,78 +182,79 @@ int main(int argc, char* argv[])
 		Field<2,float> horizontal, vertical, mask;
 		horizontal.Read(argv[argi++]);
 		if (m_vmapfilename)
-			vertical.Read(m_vmapfilename);
+		vertical.Read(m_vmapfilename);
 		image::Read(mask, argv[argi++]);
 		options.load(argv[argi++]);
-		CVector<2,double>
-			cod1=make_vector<double>((options.projector_width+1)/2.0,options.projector_height*options.projector_horizontal_center),
-			cod2=(make_vector(1.0,1.0)+mask.size())/2;
+		*/
+		CVector<2, double>
+			cod1 = make_vector<double>((options.projector_width + 1) / 2.0, options.projector_height*options.projector_horizontal_center),
+			cod2 = (make_vector(1.0, 1.0) + mask.size()) / 2;
 
 		// intrinsic matrices of projector and camera
-		CMatrix<3,3,double> matKpro, matKcam;
-		double xi1,xi2;
-		FILE*fr;
-		matKcam.Read(argv[argi++]);
-		fr=fopen(argv[argi++],"rb");
-		if (!fr) throw std::runtime_error("failed to open camera distortion");
-		fscanf(fr,"%lf",&xi2);
-		fclose(fr);
-		matKpro.Read(argv[argi++]);
-		fr=fopen(argv[argi++],"rb");
-		if (!fr) throw std::runtime_error("failed to open projector distortion");
-		fscanf(fr,"%lf",&xi1);
-		fclose(fr);
+		//CMatrix<3,3,double> matKpro, matKcam;
+		//double xi1,xi2;
+		//FILE*fr;
+		//matKcam.Read(argv[argi++]);
+		//fr=fopen(argv[argi++],"rb");
+		//if (!fr) throw std::runtime_error("failed to open camera distortion");
+		//fscanf(fr,"%lf",&xi2);
+		//fclose(fr);
+		//matKpro.Read(argv[argi++]);
+		//fr=fopen(argv[argi++],"rb");
+		//if (!fr) throw std::runtime_error("failed to open projector distortion");
+		//fscanf(fr,"%lf",&xi1);
+		//fclose(fr);
 
 		// extrinsic matrices of projector and camera
-		CMatrix<3,4,double> proRt, camRt;
-		proRt.Read(argv[argi++]);
-		camRt = make_diagonal_matrix(1,1,1).AppendCols(make_vector(0,0,0));//CMatrix<3,4,double>::GetIdentity(); // reconstruction is in camera coordinate frame
+		CMatrix<3, 4, double> camRt;
+		//proRt.Read(argv[argi++]);
+		camRt = make_diagonal_matrix(1, 1, 1).AppendCols(make_vector(0, 0, 0));//CMatrix<3,4,double>::GetIdentity(); // reconstruction is in camera coordinate frame
 
 		// compute projection matrices of projector and camera
-		std::vector<CMatrix<3,4,double>> matrices(2);
+		std::vector<CMatrix<3, 4, double>> matrices(2);
 		matrices[0] = matKcam * camRt; // camera
 		matrices[1] = matKpro * proRt; // projector
 
 		// fundamental matrix
-		CMatrix<3,3,double> matR;
-		CVector<3,double> vecT;
+		CMatrix<3, 3, double> matR;
+		CVector<3, double> vecT;
 		matR.Initialize(proRt.ptr());
-		vecT.Initialize(proRt.ptr()+9);
-		CMatrix<3,3,double> matF = transpose_of(inverse_of(matKpro)) * GetSkewSymmetric(vecT) * matR * inverse_of(matKcam);
+		vecT.Initialize(proRt.ptr() + 9);
+		CMatrix<3, 3, double> matF = transpose_of(inverse_of(matKpro)) * GetSkewSymmetric(vecT) * matR * inverse_of(matKcam);
 
 		// triangulate 3d points
-		std::vector<CVector<3,double>> result;
-		for (int y=0; y<horizontal.size(1); y++)
+		std::vector<CVector<3, double>> result;
+		for (int y = 0; y<horizontal.size(1); y++)
 		{
-			if (y % (horizontal.size(1)/100) == 0)
-				printf("\rtriangulation: %d%% done", 100*y/horizontal.size(1));
+			if (y % (horizontal.size(1) / 100) == 0)
+				printf("\rtriangulation: %d%% done", 100 * y / horizontal.size(1));
 
-			int nbehind=0;
-			for (int x=0; x<horizontal.size(0); x++)
+			int nbehind = 0;
+			for (int x = 0; x<horizontal.size(0); x++)
 			{
-				if (mask.cell(x,y))
+				if (mask.cell(x, y))
 				{
 					// 2D correspondence
-					std::vector<CVector<2,double>> p2d(2);
+					std::vector<CVector<2, double>> p2d(2);
 
 					// camra coordinate
-					slib::fmatrix::CancelRadialDistortion(xi2,cod2,make_vector<double>(x,y),p2d[0]);
+					slib::fmatrix::CancelRadialDistortion(xi2, cod2, make_vector<double>(x, y), p2d[0]);
 
 					// projector coordinate
 					double proj_y;
 					if (m_vmapfilename)
 					{
-						proj_y = vertical.cell(x,y);
+						proj_y = vertical.cell(x, y);
 					}
 					else
 					{
-						CVector<3,double> epiline = matF * GetHomogeneousVector(p2d[0]);
-						proj_y = -(epiline[0] * horizontal.cell(x,y) + epiline[2]) / epiline[1];
+						CVector<3, double> epiline = matF * GetHomogeneousVector(p2d[0]);
+						proj_y = -(epiline[0] * horizontal.cell(x, y) + epiline[2]) / epiline[1];
 					}
-					slib::fmatrix::CancelRadialDistortion(xi1,cod1,make_vector<double>(horizontal.cell(x,y),proj_y),p2d[1]);
+					slib::fmatrix::CancelRadialDistortion(xi1, cod1, make_vector<double>(horizontal.cell(x, y), proj_y), p2d[1]);
 
 					// triangulate
-					CVector<3,double> p3d;
+					CVector<3, double> p3d;
 					SolveStereo(p2d, matrices, p3d);
 
 					// save

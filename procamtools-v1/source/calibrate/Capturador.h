@@ -30,7 +30,7 @@ public:
 	COptions* m_Options;
 	bool CapturePatterns(int time);
 	bool CapturePatternsUndisorted(Mat& CameraMatrix, Mat& DistVect,int time);
-	static bool SerializeCaptures(vector<Mat> imagenes,string str,bool b16);
+	static string SerializeCaptures(vector<Mat> imagenes,string str);
 	~CCapturador();
 };
 

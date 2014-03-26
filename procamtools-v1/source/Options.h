@@ -31,7 +31,7 @@ struct options_t
 	int nsamples;
 
 	options_t() : 
-		projector_width(1024), projector_height(768), projector_horizontal_center(0.5),	// projector 
+		projector_width(1024), projector_height(768), projector_horizontal_center(0.83),	// projector 
 		num_fringes(4), fringe_interval(1),		// fringe patterns 8 el default
 		horizontal(true), vertical(true), // directions
 		complementary(true), // binary code

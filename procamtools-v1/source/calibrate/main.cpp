@@ -13,36 +13,24 @@
 #include "calibrate.h"
 #include "Decoder.h"
 #include "Capturador.h"
-
+#include "../triangulate/triangulate.cpp"
 #undef min
 #undef max
-
-void print_usage(const char *argv0)
-{
-	const char *prog = strrchr(argv0, '\\');
-	if (prog)
-		prog++;
-	else
-		prog = argv0;
-	printf("Usage: %s <options> <h.map> <v.map> <mask.bmp>\n",prog);
-	exit(-1);
-}
 
 int main(int argc, char *argv[]) 
 {
 	try 
 	{
-		// parse commandline options
-		//if (argc!=5) print_usage(argv[0]);
 		COptions* options = new COptions(1024, 768, 10, 4, true, true, true, false);
 		options_t opt;
 		opt.debug = true;
 		string ruta = "../resources/Patterns/pattern-0";
 		
 		CCapturador* cap = new CCapturador(options, ruta);
-		//cap->CapturePatterns(500);
-		cap->LoadCapturesFromFiles("../resources/Captures/V4GP/Capture-");
-		CDecoder* decoder = new CDecoder(options, cap->m_vCaptures);
+		cap->CapturePatterns(500);
+		string ruta2 = cap->SerializeCaptures(cap->m_vCaptures, "CasaV2");
+		//cap->LoadCapturesFromFiles("../resources/Captures/V4GP/Capture-");
+ 		CDecoder* decoder = new CDecoder(options, cap->m_vCaptures);
 		decoder->Decode();
 		CProCamCalibrate calib(opt);
 		
@@ -60,18 +48,25 @@ int main(int argc, char *argv[])
 		for (int j = 0; j < decoder->m_mMask[1].rows; j++)
 			m_mask.cell(i, j) = decoder->m_mMask[1].at<ushort>(j, i);
 		
-		slib::Field<2, float> horizontal("gray-h.bmp");
-		slib::Field<2, float> vertical("gray-v.bmp");
-		slib::Field<2, float> mask;
-		slib::image::Read(mask, "mask.bmp");
-		//calib.Calibrate(horizontal, vertical, mask);
 		calib.Calibrate(m_phase_map[0], m_phase_map[1], m_mask);
-		calib.WriteCamIntrinsic("cam-intrinsic.txt");
-		calib.WriteCamDistortion("cam-distortion.txt");
-		calib.WriteProIntrinsic("pro-intrinsic.txt");
-		calib.WriteProDistortion("pro-distortion.txt");
-		calib.WriteProExtrinsic("pro-extrinsic.txt");
-
+		std::ostringstream oss3;
+		oss3 << ruta2 << "//cam-intrinsic.txt";
+		calib.WriteCamIntrinsic(oss3.str());
+		std::ostringstream oss4;
+		oss4 << ruta2 << "//cam-distortion.txt";
+		calib.WriteCamDistortion(oss4.str());
+		std::ostringstream oss5;
+		oss5 <<  ruta2 << "//pro-intrinsic.txt";
+		calib.WriteProIntrinsic(oss5.str());
+		std::ostringstream oss6;
+		oss6 <<  ruta2 << "//pro-distortion.txt";
+		calib.WriteProDistortion(oss6.str());
+		std::ostringstream oss7;
+		oss7 << ruta2 << "//pro-extrinsic.txt";
+		calib.WriteProExtrinsic(oss7.str());
+		std::ostringstream oss8;
+		oss8 << ruta2 << "//mesh.ply";
+		makeTriangulation(opt, m_phase_map[0], m_phase_map[1], m_mask, calib.m_pro_int, calib.m_cam_int, calib.m_pro_ext, calib.m_pro_dist, calib.m_cam_dist,oss8.str());
 		cvWaitKey();
 	} 
 	catch (const std::exception& e) 
