@@ -8,11 +8,11 @@
 #pragma once
 
 // http://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/
-#pragma comment(lib,"mkl_intel_c_dll.lib")
+//#pragma comment(lib,"mkl_intel_c_dll.lib")
 
 #undef small // conflict with "rpcndr.h" used in MFC
-#include "mkl_lapack.h"
 #include "MathBaseUtil.h"
+#include "mkl_lapack.h"
 #include <iostream>
 #include <algorithm>
 #undef min
@@ -184,7 +184,6 @@ const CDynamicMatrix<T> inverse_of(const CDynamicMatrix<T>& mat)
 	int lwork = m;
 	double *work = new double [lwork];
 	DGETRI(&n, a, &lda, ipiv, work, &lwork, &info);
-
 	delete [] ipiv;
 	delete [] work;
 

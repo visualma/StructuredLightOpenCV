@@ -18,7 +18,7 @@ bool CDecoder::Decode()
 		DecodeGray(0, 0.1);
 		//Mascarear
 		m_mMask[0] = Mat::zeros(m_mGray[0].rows,m_mGray[0].cols, CV_8UC1);
-		cv::threshold(m_mGrayError[0], m_mMask[0], 50, 255, CV_THRESH_BINARY);
+		cv::threshold(m_mGrayError[0], m_mMask[0], 10, 255, CV_THRESH_BINARY);
 		m_mMask[0].convertTo(m_mMask[0], CV_16UC1);
 		if (m_Info->m_bPhase)
 		{
@@ -32,7 +32,7 @@ bool CDecoder::Decode()
 		else
 			m_mPhaseError[0] = Mat(m_mGray[0].rows, m_mGray[0].cols, CV_32FC1);
 		CreateReliableMap(0);
-		m_mGray[0] = MaskMat(m_mGray[0], m_mMask[0]);
+		m_mGray[0] = MaskMat(m_mGray[0], m_mMask[0],true);
 		temp.push_back(m_mGrayError[0]);
 		temp.push_back(m_mMask[0]);
 		Mat temp1 = Mat(m_mGray[0].rows,m_mGray[0].cols,CV_8UC1);
@@ -47,7 +47,7 @@ bool CDecoder::Decode()
 		DecodeGray(1, 0.1);
 		//Mascarear
 		m_mMask[1] = Mat::zeros(m_mGray[1].rows, m_mGray[1].cols, CV_8UC1);
-		cv::threshold(m_mGrayError[1], m_mMask[1], 50, 255, CV_THRESH_BINARY);
+		cv::threshold(m_mGrayError[1], m_mMask[1], 10, 255, CV_THRESH_BINARY);
 		m_mMask[1].convertTo(m_mMask[1], CV_16UC1);
 		if (m_Info->m_bPhase)
 		{
@@ -61,7 +61,7 @@ bool CDecoder::Decode()
 		else
 			m_mPhaseError[1] = Mat(m_mGray[1].rows, m_mGray[1].cols, CV_32FC1);
 		CreateReliableMap(1);
-		m_mGray[1] = MaskMat(m_mGray[1], m_mMask[1]);
+		m_mGray[1] = MaskMat(m_mGray[1], m_mMask[1],true);
 		temp.push_back(m_mGrayError[1]);
 		temp.push_back(m_mMask[1]);
 		Mat temp1 = Mat(m_mGray[1].rows, m_mGray[1].cols, CV_8UC1);
@@ -76,13 +76,13 @@ bool CDecoder::Decode()
 		for (int y = 0; y < m_mMask[1].cols;y++)
 		for (int x = 0; x < m_mMask[1].rows; x++)
 		{
-			if (!m_mMask[1].at<ushort>(x, y))
-				m_mMask[0].at<ushort>(x, y) = 0;
+			if (!m_mMask[1].at<uchar>(x, y))
+				m_mMask[0].at<uchar>(x, y) = 0;
 			m_mPhaseError[0].at<float>(x, y) = std::min(m_mPhaseError[0].at<float>(x, y), m_mPhaseError[1].at<float>(x, y));
 		}
 	}
-	m_mGray[0] = MaskMat(m_mGray[0], m_mMask[0]);
-	m_mGray[1] = MaskMat(m_mGray[1], m_mMask[0]);
+	//m_mGray[0] = MaskMat(m_mGray[0], m_mMask[0],false);
+	//m_mGray[1] = MaskMat(m_mGray[1], m_mMask[0],false);
 	temp.push_back(m_mMask[0]);
 	cap.SerializeCaptures(temp, "mask");
 	return true;
@@ -267,14 +267,24 @@ int CDecoder::ConvertGrayToBinary(const unsigned long graycode)
 	return bincode;
 }
 
-Mat CDecoder::MaskMat(Mat& img, Mat& mask)
+Mat CDecoder::MaskMat(Mat& img, Mat& mask,bool b16)
 {
-	Mat a = img.clone();
-	for (int i = 0; i < a.cols;i++)
-	for (int j = 0; j < a.rows;j++)
-	if (mask.at<ushort>(j, i) == 0)
-		a.at<ushort>(j, i) = 0;
-	return a;
+	//Mat a = img.clone();
+	if (b16)
+	{
+		for (int i = 0; i < img.cols; i++)
+		for (int j = 0; j < img.rows; j++)
+		if (mask.at<ushort>(j, i) == 0)
+			img.at<ushort>(j, i) = 0;
+	}
+	else
+	{
+		for (int i = 0; i < img.cols; i++)
+		for (int j = 0; j < img.rows; j++)
+		if (mask.at<uchar>(j, i) == 0)
+			img.at<ushort>(j, i) = 0;
+	}
+	return img;
 }
 
 

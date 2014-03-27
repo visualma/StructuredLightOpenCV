@@ -58,7 +58,7 @@ public:
 	void DecodeGray(int direction,float int_threashold);
 	Mat DecodeBinToGray(vector<Mat> diff);
 	int ConvertGrayToBinary(const unsigned long graycode);
-	Mat MaskMat(Mat& img, Mat& mask);
+	static Mat MaskMat(Mat& img, Mat& mask,bool);
 	Mat DecodePhaseImages(vector<Mat>&, int);
 	void UnwrapPhase(Mat& phase, int period, Mat& reference, Mat& result, Mat& unwrap_error);
 	void CreateReliableMap(int dir);

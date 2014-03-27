@@ -16,7 +16,7 @@
 
 #include "../FundamentalMatrix.h"
 #include "../Options.h"
-
+#include "../calibrate/calibrate.h"
 struct options_t options;
 
 using namespace slib;

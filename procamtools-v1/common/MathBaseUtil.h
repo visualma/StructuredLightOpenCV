@@ -8,7 +8,6 @@
 #pragma once
 
 #include "MathBase.h"
-
 namespace slib
 {
 

@@ -205,7 +205,7 @@ bool CCapturador::LoadCapturesFromFiles(string ruta)
 		oss << ruta;
 		if (i < 10)
 			oss << "0";
-		oss << i << ".jpg";
+		oss << i << ".bmp";
 		string temp = oss.str();
 		Mat capture = imread(oss.str(), 1);
 		if (capture.empty())
