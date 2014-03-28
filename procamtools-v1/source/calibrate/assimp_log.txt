@@ -1,0 +1,10 @@
+Info,  T5756: Load mesh1.ply
+Info,  T5756: Found a matching importer for this file format
+Info,  T5756: Import root directory is '.\'
+Info,  T5756: Entering post processing pipeline
+Info,  T5756: Points: 0, Lines: 0, Triangles: 1, Polygons: 0 (Meshes, X = removed)
+Info,  T5756: GenVertexNormalsProcess finished. Vertex normals have been calculated
+Error, T5756: Failed to compute tangents; need UV data in channel0
+Info,  T5756: JoinVerticesProcess finished | Verts in: 812808 out: 144809 | ~82.2%
+Info,  T5756: Cache relevant are 1 meshes (270936 faces). Average output ACMR is 0.734088
+Info,  T5756: Leaving post processing pipeline
