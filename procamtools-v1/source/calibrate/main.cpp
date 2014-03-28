@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 		CCapturador* cap = new CCapturador(options, ruta);
 		//cap->CapturePatterns(500);
 		//string ruta2 = cap->SerializeCaptures(cap->m_vCaptures, "CasaV2");
-		cap->LoadCapturesFromFiles("../resources/Captures/CasaV2-1395819804/Capture-");
+		cap->LoadCapturesFromFiles("../resources/Captures/CasaV2-1395819069/Capture-");
  		CDecoder* decoder = new CDecoder(options, cap->m_vCaptures);
 		decoder->Decode();
 		CProCamCalibrate calib(opt);

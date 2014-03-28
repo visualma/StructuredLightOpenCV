@@ -11,19 +11,21 @@
 
 static int g_mX;
 static int g_mY;
-
-
+static float g_s;
 class Renderer
 {
 public:
 	Renderer()
 	{
 		angle = 0.0f;
+		g_s = 1.0f;
 	}
 	~Renderer()
 	{}
 private:
 	void setupDrawCallback();
+	void setupMouseFunction();
+	void setupKeyboarFunction();
 public:
 	const aiScene* scene = NULL;
 	GLuint scene_list = 0;
@@ -41,7 +43,7 @@ public:
 		glViewport(0, 0, width, height);
 	}
 
-	static void myMouseMove(int x, int y)
+	void myMouseMove(int x, int y)
 	{
 		g_mX = x;
 		g_mY = 768 - y;
@@ -273,16 +275,23 @@ public:
 		glLoadIdentity();
 		gluLookAt(0.f, 0.f, 3.f, 0.f, 0.f, -5.f, 0.f, 1.f, 0.f);
 
-		// rotate it around the y axis
 
-		glRotatef((g_mX/1024.0f)*360.0f, 0.f, 1.f, 0.f);
+
+		// rotate it around the y axis
+		float width = glutGet(GLUT_WINDOW_WIDTH);
+		float height = glutGet(GLUT_WINDOW_HEIGHT);
+		float rX = (g_mX / width)*90-45;
+		float rY = (g_mY / height)*90-45+180;
+		glRotatef(rY, 1.0, 0.f, 0.f);
+		glRotatef(-rX, 0.0f, 1.0f, 0.0f);
 
 		// scale the whole asset to fit into our view frustum 
 		tmp = scene_max.x - scene_min.x;
 		tmp = aisgl_max(scene_max.y - scene_min.y, tmp);
 		tmp = aisgl_max(scene_max.z - scene_min.z, tmp);
 		tmp = 1.f / tmp;
-		glScalef(tmp, tmp, tmp);
+		glScalef(tmp*g_s, tmp*g_s, tmp*g_s);
+
 
 		// center the model
 		glTranslatef(-scene_center.x, -scene_center.y, -scene_center.z);
@@ -337,7 +346,8 @@ public:
 		glutCreateWindow("Assimp - Very simple OpenGL sample");
 		setupDrawCallback();
 		glutReshapeFunc(&Renderer::reshape);
-		glutPassiveMotionFunc(myMouseMove);
+		setupMouseFunction();
+		setupKeyboarFunction();
 		// get a handle to the predefined STDOUT log stream and attach
 		// it to the logging system. It remains active for all further
 		// calls to aiImportFile(Ex) and aiApplyPostProcessing.
