@@ -1,10 +1,10 @@
-Info,  T4988: Load mesh1.ply
-Info,  T4988: Found a matching importer for this file format
-Info,  T4988: Import root directory is '.\'
-Info,  T4988: Entering post processing pipeline
-Info,  T4988: Points: 0, Lines: 0, Triangles: 1, Polygons: 0 (Meshes, X = removed)
-Info,  T4988: GenVertexNormalsProcess finished. Vertex normals have been calculated
-Error, T4988: Failed to compute tangents; need UV data in channel0
-Info,  T4988: JoinVerticesProcess finished | Verts in: 865560 out: 152388 | ~82.4%
-Info,  T4988: Cache relevant are 1 meshes (288520 faces). Average output ACMR is 0.724965
-Info,  T4988: Leaving post processing pipeline
+Info,  T4144: Load mesh1.ply
+Info,  T4144: Found a matching importer for this file format
+Info,  T4144: Import root directory is '.\'
+Info,  T4144: Entering post processing pipeline
+Info,  T4144: Points: 0, Lines: 0, Triangles: 1, Polygons: 0 (Meshes, X = removed)
+Info,  T4144: GenVertexNormalsProcess finished. Vertex normals have been calculated
+Error, T4144: Failed to compute tangents; need UV data in channel0
+Info,  T4144: JoinVerticesProcess finished | Verts in: 1042758 out: 175389 | ~83.2%
+Info,  T4144: Cache relevant are 1 meshes (347586 faces). Average output ACMR is 0.699318
+Info,  T4144: Leaving post processing pipeline

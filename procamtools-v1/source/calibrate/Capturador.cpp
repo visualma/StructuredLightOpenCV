@@ -45,13 +45,21 @@ CCapturador::CCapturador(COptions* opt, string ruta) :  m_Options(opt)
 
 bool CCapturador::CapturePatterns(int time)
 {
-	VideoCapture cap(0); // open the default camera
-	if (!cap.isOpened())  // check if we succeeded
+	m_vCaptures.clear();
+	/*
+	//VideoCapture cap(0); // open the default camera
+	if (!m_VideoCapture.isOpened())  // check if we succeeded
+		m_VideoCapture = VideoCapture(0);
+	if (!m_VideoCapture.isOpened())
+		return false;
+		*/
+	VideoCapture cap(0);
+	if (!cap.isOpened())
 		return -1;
 	bool bMakeCapture = false;
 	int nPatterns = 0;
 	namedWindow("Camera", 1);
-	namedWindow("Patrones", CV_WINDOW_FULLSCREEN);
+	namedWindow("Patrones");
 
 	HWND win_handle = FindWindow(0, "Patrones");
 	if (!win_handle)
@@ -62,7 +70,7 @@ bool CCapturador::CapturePatterns(int time)
 	// Resize
 	unsigned int flags = (SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER);
 	flags &= ~SWP_NOSIZE;
-	unsigned int x = 0;
+	unsigned int x = 1920;
 	unsigned int y = 0;
 	unsigned int w = m_Options->m_nWidth;
 	unsigned int h = m_Options->m_nHeight;
@@ -71,8 +79,8 @@ bool CCapturador::CapturePatterns(int time)
 	// Borderless
 	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
 	ShowWindow(win_handle, SW_SHOW);
-	cvMoveWindow("Patrones", 0, 0);
-	//cvWaitKey(5000);
+	cvMoveWindow("Patrones", 1920, 0);
+	cvWaitKey(5000);
 	auto A = GetTickCount();
 	auto B = GetTickCount();
 	for (int i = 0;;)
@@ -104,13 +112,14 @@ bool CCapturador::CapturePatterns(int time)
 
 bool CCapturador::CapturePatternsUndisorted(Mat& CameraMatrix,Mat& DistMatrix,int time)
 {
+	m_vCaptures.clear();
 	VideoCapture cap(0); // open the default camera
 	if (!cap.isOpened())  // check if we succeeded
 		return -1;
 	bool bMakeCapture = false;
 	int nPatterns = 0;
 	namedWindow("Camera", 1);
-	namedWindow("Patrones", CV_WINDOW_FULLSCREEN);
+	namedWindow("Patrones");
 /*
 	HWND win_handle = FindWindow(0, L"Patrones");
 	if (!win_handle)
@@ -198,6 +207,7 @@ string CCapturador::SerializeCaptures(vector<Mat> imagenes,string str)
 
 bool CCapturador::LoadCapturesFromFiles(string ruta)
 {
+	m_vCaptures.clear();
 	m_nPatterns = m_Options->m_nNumPatterns;
 	for (int i = 0; i < m_nPatterns + m_Options->m_nNumFringes * 2; i++)
 	{
@@ -219,6 +229,7 @@ bool CCapturador::LoadCapturesFromFiles(string ruta)
 }
 bool CCapturador::LoadCapturesFromFilesUndisorted(string ruta,Mat& CameraMatrix,Mat& DistMatrix)
 {
+	m_vCaptures.clear();
 	m_nPatterns = m_Options->m_nNumPatterns;
 	for (int i = 0; i < m_nPatterns + m_Options->m_nNumFringes * 2; i++)
 	{

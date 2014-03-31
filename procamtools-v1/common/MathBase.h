@@ -15,6 +15,8 @@
 #define _ASSERTE assert
 #endif
 
+#include <stdio.h>
+#include <string>
 #undef min
 #undef max
 

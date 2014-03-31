@@ -11,6 +11,7 @@
 #include "ColorConv.h"
 #include <iostream>
 #include <algorithm>
+#include <math.h>
 namespace slib
 {
 namespace image

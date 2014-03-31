@@ -18,7 +18,7 @@ bool CDecoder::Decode()
 		DecodeGray(0, 0.1);
 		//Mascarear
 		m_mMask[0] = Mat::zeros(m_mGray[0].rows,m_mGray[0].cols, CV_8UC1);
-		cv::threshold(m_mGrayError[0], m_mMask[0], 50, 255, CV_THRESH_BINARY);
+		cv::threshold(m_mGrayError[0], m_mMask[0], 0, 255, CV_THRESH_BINARY);
 		m_mMask[0].convertTo(m_mMask[0], CV_16UC1);
 		if (m_Info->m_bPhase)
 		{
@@ -47,7 +47,7 @@ bool CDecoder::Decode()
 		DecodeGray(1, 0.1);
 		//Mascarear
 		m_mMask[1] = Mat::zeros(m_mGray[1].rows, m_mGray[1].cols, CV_8UC1);
-		cv::threshold(m_mGrayError[1], m_mMask[1], 50, 255, CV_THRESH_BINARY);
+		cv::threshold(m_mGrayError[1], m_mMask[1], 0, 255, CV_THRESH_BINARY);
 		m_mMask[1].convertTo(m_mMask[1], CV_16UC1);
 		if (m_Info->m_bPhase)
 		{

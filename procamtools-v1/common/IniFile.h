@@ -6,7 +6,7 @@
 //
 
 #pragma once
-
+#include <map>
 namespace slib {
 
 class CIniFile

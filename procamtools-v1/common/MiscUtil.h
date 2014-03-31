@@ -13,7 +13,7 @@
 
 #undef min
 #undef max
-
+#include <stdarg.h>
 namespace slib
 {
 

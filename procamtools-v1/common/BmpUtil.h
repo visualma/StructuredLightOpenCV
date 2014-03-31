@@ -17,7 +17,10 @@
 
 #undef min
 #undef max
-
+#include <stdio.h>
+#include <string>
+#include <assert.h>
+using namespace std;
 namespace slib
 {
 namespace image

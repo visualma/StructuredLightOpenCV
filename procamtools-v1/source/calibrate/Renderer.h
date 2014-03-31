@@ -6,8 +6,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <GL/glut.h>
+
+#include "MathBaseLapack.h"
+#include "MiscUtil.h"
+#include "Stereo.h"
+#include "LeastSquare.h"
+#include "../FundamentalMatrix.h"
+#include "../Options.h"
+#include "Field.h"
+#include "ImageBmpIO.h"
 #define aisgl_min(x,y) (x<y?x:y)
 #define aisgl_max(x,y) (y>x?y:x)
+
+using namespace slib;
 
 static int g_mX;
 static int g_mY;
@@ -397,4 +408,207 @@ public:
 		aiDetachAllLogStreams();
 		return 0;
 	}
+	
+
+	////////////////////////TRIANGULATION/////////////////////////////
+	std::string m_plyfilename = "mesh.ply";
+
+	// filename of optional vertical correspondence 
+	char *m_vmapfilename = "123";
+
+	float m_max_edge_length = 0.1;
+	float m_distortion_angle = 1;
+	bool m_debug = true;
+
+	bool distorted(const int v1, const int v2, const int v3, const std::vector<CVector<3, double>>& result)
+	{
+		if (result[v1][2]<0 || result[v2][2]<0 || result[v3][2]<0)
+			return true;
+
+		CVector<3, double> d12 = result[v2] - result[v1];
+		CVector<3, double> d23 = result[v3] - result[v2];
+		CVector<3, double> d31 = result[v1] - result[v3];
+		double n12 = GetNorm2(d12);
+		double n23 = GetNorm2(d23);
+		double n31 = GetNorm2(d31);
+
+		if (n12>m_max_edge_length || n23>m_max_edge_length || n31>m_max_edge_length)
+			return true;
+
+		double cos1 = dot(d12, -d31) / (n12*n31);
+		double cos2 = dot(-d12, d23) / (n12*n23);
+		double cos3 = dot(-d23, d31) / (n23*n31);
+		double maxcos = std::max(std::max(cos1, cos2), cos3);
+
+		double t = cos(m_distortion_angle*M_PI / 180);
+		return maxcos > t;
+	}
+
+	void WritePly(const std::vector<CVector<3, double>>& result, const Field<2, float>& mask, std::string filename)
+	{
+		// generate face indices
+		Field<2, int> index(mask.size());
+		for (int y = 0, idx = 0; y<mask.size(1); y++)
+		for (int x = 0; x<mask.size(0); x++)
+		if (mask.cell(x, y))
+			index.cell(x, y) = idx++;
+		else
+			index.cell(x, y) = -1;
+
+		std::vector<CVector<3, int>> face;
+		for (int y = 0; y<mask.size(1) - 1; y++)
+		{
+			for (int x = 0; x<mask.size(0) - 1; x++)
+			{
+				// sore in CCW order
+				if (mask.cell(x, y) && mask.cell(x + 1, y) && mask.cell(x + 1, y + 1) &&
+					!distorted(index.cell(x, y), index.cell(x + 1, y), index.cell(x + 1, y + 1), result))
+					face.push_back(make_vector(index.cell(x, y), index.cell(x + 1, y + 1), index.cell(x + 1, y)));
+				if (mask.cell(x, y) && mask.cell(x + 1, y + 1) && mask.cell(x, y + 1) &&
+					!distorted(index.cell(x, y), index.cell(x + 1, y + 1), index.cell(x, y + 1), result))
+					face.push_back(make_vector(index.cell(x, y), index.cell(x, y + 1), index.cell(x + 1, y + 1)));
+			}
+		}
+
+		TRACE("ply => %s\n", filename.c_str());
+		FILE *fw = fopen(filename.c_str(), "wb");
+		fprintf(fw,
+			"ply\n"
+			"format binary_little_endian 1.0\n"
+			"element vertex %d\n"
+			"property float x\n"
+			"property float y\n"
+			"property float z\n"
+			"element face %d\n"
+			"property list uchar int vertex_indices\n"
+			"end_header\n", result.size(), face.size());
+		for (int i = 0; i<result.size(); i++)
+		{
+			CVector<3, float> p = make_vector(result[i][0], result[i][1], result[i][2]);
+			fwrite(&p, 12, 1, fw);
+		}
+		for (int i = 0; i<face.size(); i++)
+		{
+			fputc(3, fw);
+			fwrite(&face[i], 12, 1, fw);
+		}
+
+		fclose(fw);
+	}
+
+	// print usage and exit
+
+	// entry point
+	int makeTriangulation(options_t options, Field<2, float> horizontal, Field<2, float> vertical, Field<2, float> mask, CMatrix<3, 3,
+		double> matKpro, CMatrix<3, 3, double>  matKcam,
+		CMatrix<3, 4, double> proRt, double xi1, double xi2, std::string meshName)
+	{
+		m_plyfilename = meshName;
+		//printf("Angulo de distorcion: %f, se guadara en %s", m_distortion_angle, m_plyfilename);
+		try
+		{
+			/*
+			// parse commandline options
+			int argi = set_options(argc, argv);
+
+			// horizontal and vertical correspondences between projector and camera
+			Field<2,float> horizontal, vertical, mask;
+			horizontal.Read(argv[argi++]);
+			if (m_vmapfilename)
+			vertical.Read(m_vmapfilename);
+			image::Read(mask, argv[argi++]);
+			options.load(argv[argi++]);
+			*/
+			CVector<2, double>
+				cod1 = make_vector<double>((options.projector_width + 1) / 2.0, options.projector_height*options.projector_horizontal_center),
+				cod2 = (make_vector(1.0, 1.0) + mask.size()) / 2;
+
+			// intrinsic matrices of projector and camera
+			//CMatrix<3,3,double> matKpro, matKcam;
+			//double xi1,xi2;
+			//FILE*fr;
+			//matKcam.Read(argv[argi++]);
+			//fr=fopen(argv[argi++],"rb");
+			//if (!fr) throw std::runtime_error("failed to open camera distortion");
+			//fscanf(fr,"%lf",&xi2);
+			//fclose(fr);
+			//matKpro.Read(argv[argi++]);
+			//fr=fopen(argv[argi++],"rb");
+			//if (!fr) throw std::runtime_error("failed to open projector distortion");
+			//fscanf(fr,"%lf",&xi1);
+			//fclose(fr);
+
+			// extrinsic matrices of projector and camera
+			CMatrix<3, 4, double> camRt;
+			//proRt.Read(argv[argi++]);
+			camRt = make_diagonal_matrix(1, 1, 1).AppendCols(make_vector(0, 0, 0));//CMatrix<3,4,double>::GetIdentity(); // reconstruction is in camera coordinate frame
+
+			// compute projection matrices of projector and camera
+			std::vector<CMatrix<3, 4, double>> matrices(2);
+			matrices[0] = matKcam * camRt; // camera
+			matrices[1] = matKpro * proRt; // projector
+
+			// fundamental matrix
+			CMatrix<3, 3, double> matR;
+			CVector<3, double> vecT;
+			matR.Initialize(proRt.ptr());
+			vecT.Initialize(proRt.ptr() + 9);
+			CMatrix<3, 3, double> matF = transpose_of(inverse_of(matKpro)) * GetSkewSymmetric(vecT) * matR * inverse_of(matKcam);
+
+			// triangulate 3d points
+			std::vector<CVector<3, double>> result;
+			for (int y = 0; y<horizontal.size(1); y++)
+			{
+				if (y % (horizontal.size(1) / 100) == 0)
+					printf("\rtriangulation: %d%% done", 100 * y / horizontal.size(1));
+
+				int nbehind = 0;
+				for (int x = 0; x<horizontal.size(0); x++)
+				{
+					if (mask.cell(x, y))
+					{
+						// 2D correspondence
+						std::vector<CVector<2, double>> p2d(2);
+
+						// camra coordinate
+						slib::fmatrix::CancelRadialDistortion(xi2, cod2, make_vector<double>(x, y), p2d[0]);
+
+						// projector coordinate
+						double proj_y;
+						if (m_vmapfilename)
+						{
+							proj_y = vertical.cell(x, y);
+						}
+						else
+						{
+							CVector<3, double> epiline = matF * GetHomogeneousVector(p2d[0]);
+							proj_y = -(epiline[0] * horizontal.cell(x, y) + epiline[2]) / epiline[1];
+						}
+						slib::fmatrix::CancelRadialDistortion(xi1, cod1, make_vector<double>(horizontal.cell(x, y), proj_y), p2d[1]);
+
+						// triangulate
+						CVector<3, double> p3d;
+						SolveStereo(p2d, matrices, p3d);
+
+						// save
+						result.push_back(p3d);
+						if (p3d[2]<0)
+							nbehind++;
+					}
+				}
+				if (m_debug && nbehind)
+					TRACE("\rfound %d points behind viewpoint.\n", nbehind);
+			}
+			printf("\n");
+			// export triangular mesh in PLY format
+			WritePly(result, mask, m_plyfilename);
+		}
+		catch (const std::exception& e)
+		{
+			TRACE("error: %s\n", e.what());
+			return -1;
+		}
+		return 0;
+	}
+
 };
