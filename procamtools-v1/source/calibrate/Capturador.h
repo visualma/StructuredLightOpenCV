@@ -11,7 +11,7 @@ public:
 	int m_nWidth, m_nHeight, m_nNumPatterns,m_nBasePatterns,m_nScreenWidth,m_nScreenHeight,m_nNumFringes, m_nFringeInterval;
 	bool m_bHorizontal, m_bVertical, m_bComplementary, m_bPhase;
 	float m_fProjectorCenter;
-	COptions(int Width, int Height, int numPatterns,int numFringes, bool Horizontal, bool Vertical, bool Complementary,bool fringes);
+	COptions(int Width, int Height, int numPatterns,int numFringes, bool Horizontal, bool Vertical, bool Complementary,bool fringes,bool);
 	int GetNumBits(int dir);
 	void GetDesktopResolution(int& horizontal, int& vertical);
 };

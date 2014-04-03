@@ -15,10 +15,9 @@
 #include "ImageBase.h"
 #include "LeastSquare.h"
 #include "Stereo.h"
-
 #include "../Options.h"
 #include "../FundamentalMatrix.h"
-
+using namespace System::Windows::Forms;
 class CProCamCalibrate
 {
 public:
@@ -147,29 +146,36 @@ private:
 		if (m_options.debug)
 		{
 			TRACE("---------- fundamental / algebraic ----------\n");
+			//MessageBox::Show("1/7 Calculating fundamental / algebraic Matrix");
 			slib::fmatrix::EstimateFundamentalMatrixAlgebraic(p1, p2, fundamental);
 			dump_epipolar_constraint(fundamental,   "reprojection-F-algebraic.bmp");
 
 			TRACE("---------- fundamental / geometric ----------\n");
+			//MessageBox::Show("2/7 Calculating fundamental / geometric Matrix");
 			slib::fmatrix::EstimateFundamentalMatrixGeometric(p1, p2, fundamental);
 			dump_epipolar_constraint(fundamental,   "reprojection-F-geometric.bmp");
 
 			TRACE("---------- fundamental / ransac ----------\n");
+			//MessageBox::Show("3/7 Calculating fundamental / ransac aproximation");
 			slib::fmatrix::EstimateFundamentalMatrixRansac(p1, p2, fundamental);
 			dump_epipolar_constraint(fundamental,   "reprojection-F-ransac.bmp");
 
 			TRACE("---------- radial fundamental / algebraic ----------\n");
+			//MessageBox::Show("4/7 Calculating radial fundamental / algebraic Matrix");
 			slib::fmatrix::EstimateRadialFundamentalMatrixAlgebraic(p1, p2, m_pro_cod, m_cam_cod, m_pro_dist, m_cam_dist, fundamental);
 			dump_epipolar_constraint(fundamental,"reprojection-R-algebraic.bmp");
 			TRACE("distortion = %g, %g\n", m_pro_dist, m_cam_dist);
 
 			TRACE("---------- radial fundamental / geometric ----------\n");
+			//MessageBox::Show("5/7 Calculating radial fundamental / geometric Matrix");
 			m_pro_dist=m_cam_dist=0;
 			slib::fmatrix::EstimateRadialFundamentalMatrixGeometric(p1, p2, m_pro_cod, m_cam_cod, m_pro_dist, m_cam_dist, fundamental);
 			dump_epipolar_constraint(fundamental,"reprojection-R-geometric.bmp");
 			TRACE("distortion = %g, %g\n", m_pro_dist, m_cam_dist);
+			//MessageBox::Show(m_pro_dist.ToString());
 
 			TRACE("---------- radial fundamental / apriori ----------\n");
+			//MessageBox::Show("6/7 Calculating radial fundamental / apriori Matrix");
 			slib::CVector<2,double> backup_pro_cod(m_pro_cod), backup_cam_cod(m_cam_cod);
 			m_pro_dist=m_cam_dist=0;
 			slib::fmatrix::EstimateFundamentalMatrixAlgebraic(p1, p2, fundamental);
@@ -181,6 +187,7 @@ private:
 			m_cam_cod=backup_cam_cod;
 
 			TRACE("---------- radial fundamental / ransac ----------\n");
+			//MessageBox::Show("7/7 Calculating radial fundamental / ransac aproximation");
 			m_pro_dist=m_cam_dist=0;
 			slib::fmatrix::EstimateRadialFundamentalMatrixRansac(p1, p2, m_pro_cod, m_cam_cod, m_pro_dist, m_cam_dist, fundamental);
 			dump_epipolar_constraint(fundamental,  "reprojection-R-ransac.bmp");
@@ -215,6 +222,7 @@ private:
 			dump_epipolar_constraint(fundamental,"reprojection-F-final.bmp");
 			dump_distortion_correction();
 		}
+		MessageBox::Show("Calibration Ready");
 	}
 
 	void dump_distortion_correction(void) const

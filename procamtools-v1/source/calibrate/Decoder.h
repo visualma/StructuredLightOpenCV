@@ -54,7 +54,7 @@ public:
 	Mat m_mGray[2];
 	Mat m_mMask[2];
 	CDecoder(COptions* Options, vector<Mat>& vCaptures);
-	bool Decode();
+	bool Decode(float thres);
 	void DecodeGray(int direction,float int_threashold);
 	Mat DecodeBinToGray(vector<Mat> diff);
 	int ConvertGrayToBinary(const unsigned long graycode);

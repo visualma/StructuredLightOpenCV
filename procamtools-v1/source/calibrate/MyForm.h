@@ -192,10 +192,10 @@ namespace calibrate {
 #pragma endregion
 	private: System::Void MyForm_Load(System::Object^  sender, System::EventArgs^  e)
 	{
-				 m_options = new COptions(1024, 768, 10, 4, true, true, true, false);
-				 string ruta = "../resources/Patterns/pattern-0";
-				 m_Cap = new CCapturador(m_options, ruta);
-				 m_bShowWebcam = false;
+				 //m_options = new COptions(1024, 768, 10, 4, true, true, true, false);
+				 //string ruta = "../resources/Patterns/pattern-0";
+				 //m_Cap = new CCapturador(m_options, ruta);
+				 //m_bShowWebcam = false;
 	}
 	private: System::Void loadCapturesToolStripMenuItem1_Click(System::Object^  sender, System::EventArgs^  e)
 	{
@@ -232,49 +232,51 @@ namespace calibrate {
 				 */
 				 try
 				 {
-					 COptions* options = new COptions(1024, 768, 10, 4, true, true, true, false);
+					 Renderer a;
+					 a.render("mesh1.ply");
+					 COptions* options = new COptions(1024, 768, 10, 4, true, true, true, false,true);
 					 options_t opt;
 					 opt.debug = true;
 					 string ruta = "../resources/Patterns/pattern-0";
 
 					 CCapturador* cap = new CCapturador(options, ruta);
-					 cap->CapturePatterns(750);
-					 cap->SerializeCaptures(cap->m_vCaptures, "CasaV3-");
+					 //cap->CapturePatterns(750);
+					 //cap->SerializeCaptures(cap->m_vCaptures, "CasaV3-");
 					 //string ruta2 = cap->SerializeCaptures(cap->m_vCaptures, "CasaV2");
-					 //cap->LoadCapturesFromFiles("../resources/Captures/CasaV2-1395819804/Capture-");
+					 cap->LoadCapturesFromFiles("../resources/Captures/CasaV3--1396243862/Capture-");
 					 CDecoder* decoder = new CDecoder(options, cap->m_vCaptures);
-					 decoder->Decode();
+					 decoder->Decode(0);
 					 CProCamCalibrate calib(opt);
 
 					 cvWaitKey();
 					 cvDestroyAllWindows();
 					 slib::Field<2, float> m_mask;
+					 
 					 //Mat mask = imread("mascara.bmp", CV_LOAD_IMAGE_GRAYSCALE);
 					 //mask.convertTo(mask, CV_8U);
 					 //printf("chanesl %d %d", mask.channels(), decoder->m_mGray[0].channels());
 
-					 m_mask.Initialize(decoder->m_mMask[1].cols, decoder->m_mMask[1].rows);
-					 for (int i = 0; i < decoder->m_mMask[1].cols; i++)
-					 for (int j = 0; j < decoder->m_mMask[1].rows; j++)
-						 m_mask.cell(i, j) = decoder->m_mMask[1].at<ushort>(j, i);
+					 Mat b = decoder->m_mMask[1].clone();// Mat(640, 480, CV_16UC1);
+					 //cv::resize(decoder->m_mMask[1], b, cv::Size(640, 480), 0, 0, cv::INTER_CUBIC);
+					 m_mask.Initialize(b.cols, decoder->m_mMask[1].rows);
+					 for (int i = 0; i < b.cols; i++)
+					 for (int j = 0; j < b.rows; j++)
+						 m_mask.cell(i, j) = b.at<ushort>(j, i);
 
-					 /*
-					 m_mask.Initialize(mask.cols, mask.rows);
-					 for (int i = 0; i < mask.cols; i++)
-					 for (int j = 0; j < mask.rows; j++)
-					 m_mask.cell(i, j) = mask.at<uchar>(j, i);
-					 */
 					 
 					 slib::Field<2, float> m_phase_map[2];
 					 for (int k = 0; k < 2; k++)
 					 {
-						 //Mat temp;
-						 //decoder->m_mGray[k].copyTo(temp, mask);
-						 //decoder->m_mGray[k] = temp.clone();
-						 m_phase_map[k].Initialize(decoder->m_mGray[k].cols, decoder->m_mGray[k].rows);
-						 for (int i = 0; i < decoder->m_mGray[k].cols; i++)
-						 for (int j = 0; j < decoder->m_mGray[k].rows; j++)
-						 m_phase_map[k].cell(i, j) = decoder->m_mGray[k].at<ushort>(j, i);
+
+//						 Mat a = Mat(640, 480, CV_16UC1);
+//						 cv::resize(decoder->m_mGray[k], a, cv::Size(640, 480), 0, 0, cv::INTER_CUBIC);
+						 //m_phase_map[k].Initialize(decoder->m_mGray[k].cols, decoder->m_mGray[k].rows);
+						 Mat a = decoder->m_mGray[k].clone();
+						 m_phase_map[k].Initialize(a.cols, a.rows);
+						 for (int i = 0; i < a.cols; i++)
+						 for (int j = 0; j < a.rows; j++)
+						 //m_phase_map[k].cell(i, j) = decoder->m_mGray[k].at<ushort>(j, i);
+						 m_phase_map[k].cell(i, j) = a.at<ushort>(j, i);
 					 }
 					 //Mat temp1 = Mat(decoder->m_mGray[1].rows, decoder->m_mGray[1].cols, CV_8UC1);
 					 //decoder->m_mGray[1].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
@@ -303,7 +305,7 @@ namespace calibrate {
 					 std::ostringstream oss8;
 					 oss8 << "mesh1.ply";
 
-					 Renderer a;
+					 //Renderer a;
 
 					 a.makeTriangulation(opt, m_phase_map[0], m_phase_map[1], m_mask, calib.m_pro_int, calib.m_cam_int, calib.m_pro_ext, calib.m_pro_dist, calib.m_cam_dist,oss8.str());
 					 a.render("mesh1.ply");

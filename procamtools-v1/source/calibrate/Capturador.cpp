@@ -6,6 +6,9 @@
 #include <Windows.h>
 #include <iostream>
 #include <fstream>
+#include <io.h>
+#include <fcntl.h>
+
 void delay(int secs) {
 	for (int i = (time(NULL) + secs); time(NULL) != i; time(NULL));
 }
@@ -41,6 +44,7 @@ CCapturador::CCapturador(COptions* opt, string ruta) :  m_Options(opt)
 		m_vPatterns.push_back(pattern);
 		oss.clear();
 	}
+
 }
 
 bool CCapturador::CapturePatterns(int time)
@@ -261,7 +265,7 @@ CCapturador::~CCapturador()
 
 ///////////////////////////////////////////////////
 
-COptions::COptions(int Width, int Height, int numPatterns, int numFringes, bool Horizontal, bool Vertical, bool Complementary, bool fringes) :
+COptions::COptions(int Width, int Height, int numPatterns, int numFringes, bool Horizontal, bool Vertical, bool Complementary, bool fringes,bool useConsole) :
 m_nWidth(Width),
 m_nHeight(Height),
 m_nNumPatterns(numPatterns),
@@ -275,6 +279,23 @@ m_bPhase(fringes)
     //GetDesktopResolution(m_nScreenWidth, m_nScreenHeight);
 	m_nFringeInterval = 1;
 	m_fProjectorCenter = 0.5;
+	if (useConsole)
+	{
+		BOOL bOk = AllocConsole();
+		if (bOk)
+		{
+			int fd;
+			HANDLE hOutput;
+			FILE* fp;
+			hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+			fd = _open_osfhandle((intptr_t)hOutput, _O_TEXT);
+			fp = _fdopen(fd, "w");
+			*stdout = *fp;
+			char *pBuffer = (char*)malloc(32);
+			setvbuf(stdout, pBuffer, _IOFBF, 32);
+			SetConsoleTitle(TEXT("Structured Light Mapping V1 Josué Page Vizcaíno"));
+		}
+	}
 }
 
 int COptions::GetNumBits(int dir)
