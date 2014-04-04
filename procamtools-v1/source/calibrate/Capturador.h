@@ -11,7 +11,7 @@ public:
 	int m_nWidth, m_nHeight, m_nNumPatterns,m_nBasePatterns,m_nScreenWidth,m_nScreenHeight,m_nNumFringes, m_nFringeInterval;
 	bool m_bHorizontal, m_bVertical, m_bComplementary, m_bPhase;
 	float m_fProjectorCenter;
-	COptions(int Width, int Height, int numPatterns,int numFringes, bool Horizontal, bool Vertical, bool Complementary,bool fringes,bool);
+	COptions(int Width, int Height, int numPatterns, int numFringes, bool Horizontal, bool Vertical, bool Complementary, bool fringes, bool useConsole);
 	int GetNumBits(int dir);
 	void GetDesktopResolution(int& horizontal, int& vertical);
 };
@@ -29,9 +29,11 @@ public:
 	vector <Mat> m_vPatterns;
 	COptions* m_Options;
 	VideoCapture m_VideoCapture;
-	bool CapturePatterns(int time);
+	bool CapturePatterns(int time,int device);
 	bool CapturePatternsUndisorted(Mat& CameraMatrix, Mat& DistVect,int time);
-	static string SerializeCaptures(vector<Mat> imagenes,string str);
+	static bool SerializeCaptures(vector<Mat> imagenes, string str);
+	static string SerializeCapturesDefault(vector<Mat> imagenes, string str);
+	bool tryCamera(int device);
 	~CCapturador();
 };
 

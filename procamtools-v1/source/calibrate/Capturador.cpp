@@ -30,7 +30,6 @@ CCapturador::CCapturador(COptions* opt, string ruta) :  m_Options(opt)
 		m_Options->m_nNumPatterns *= 2;
 	if (m_Options->m_bComplementary)
 		m_Options->m_nNumPatterns *= 2;
-	m_Options->m_nNumPatterns += m_Options->m_nNumFringes*2;
 	m_nPatterns = m_Options->m_nNumPatterns;
 	for (int i = 0; i < m_nPatterns; i++)
 	{
@@ -47,19 +46,19 @@ CCapturador::CCapturador(COptions* opt, string ruta) :  m_Options(opt)
 
 }
 
-bool CCapturador::CapturePatterns(int time)
+bool CCapturador::CapturePatterns(int time,int device)
 {
 	m_vCaptures.clear();
-	/*
+	
 	//VideoCapture cap(0); // open the default camera
 	if (!m_VideoCapture.isOpened())  // check if we succeeded
-		m_VideoCapture = VideoCapture(0);
+		m_VideoCapture = VideoCapture(device);
 	if (!m_VideoCapture.isOpened())
 		return false;
-		*/
-	VideoCapture cap(0);
-	if (!cap.isOpened())
-		return -1;
+		
+	//VideoCapture cap(0);
+	//if (!cap.isOpened())
+	//	return -1;
 	bool bMakeCapture = false;
 	int nPatterns = 0;
 	namedWindow("Camera", 1);
@@ -74,7 +73,7 @@ bool CCapturador::CapturePatterns(int time)
 	// Resize
 	unsigned int flags = (SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER);
 	flags &= ~SWP_NOSIZE;
-	unsigned int x = 1920;
+	unsigned int x = 0;
 	unsigned int y = 0;
 	unsigned int w = m_Options->m_nWidth;
 	unsigned int h = m_Options->m_nHeight;
@@ -83,7 +82,7 @@ bool CCapturador::CapturePatterns(int time)
 	// Borderless
 	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
 	ShowWindow(win_handle, SW_SHOW);
-	cvMoveWindow("Patrones", 1920, 0);
+	cvMoveWindow("Patrones", 0, 0);
 	cvWaitKey(5000);
 	auto A = GetTickCount();
 	auto B = GetTickCount();
@@ -91,8 +90,8 @@ bool CCapturador::CapturePatterns(int time)
 	{
 		imshow("Patrones", m_vPatterns[i]);
 		Mat frame;
-		cap >> frame;
-		imshow("Camera", frame);
+		m_VideoCapture >> frame;
+		//imshow("Camera", frame);
 		B = GetTickCount();
 		int C = B - A;
 		if (C>time || waitKey(30) >= 0)
@@ -110,7 +109,7 @@ bool CCapturador::CapturePatterns(int time)
 	}
 	cout << "Patrones capturados." << endl;
 	cvDestroyWindow("Patrones");
-	cvDestroyWindow("Camera");
+	//cvDestroyWindow("Camera");
 	return true;
 }
 
@@ -182,7 +181,24 @@ bool CCapturador::CapturePatternsUndisorted(Mat& CameraMatrix,Mat& DistMatrix,in
 	return true;
 }
 
-string CCapturador::SerializeCaptures(vector<Mat> imagenes,string str)
+bool CCapturador::SerializeCaptures(vector<Mat> imagenes, string str)
+{
+	for (int i = 0; i < imagenes.size(); i++)
+	{
+		std::ostringstream oss;
+		if (i<10)
+			oss << str << "-" << "0" << i << ".bmp";
+		else
+			oss << str << "-" << i << ".bmp";
+		string	ruta = oss.str();
+		imagenes[i].convertTo(imagenes[i], CV_8UC1);
+		imwrite(oss.str(), imagenes[i]);
+		oss.clear();
+	}
+	return true;
+}
+
+string CCapturador::SerializeCapturesDefault(vector<Mat> imagenes, string str)
 {
 	int tiempo = time(NULL);
 	std::ostringstream oss1;
@@ -257,6 +273,23 @@ bool CCapturador::LoadCapturesFromFilesUndisorted(string ruta,Mat& CameraMatrix,
 		oss.clear();
 	}
 	return true;
+}
+
+bool CCapturador::tryCamera(int device)
+{
+	if (!m_VideoCapture.isOpened())  // check if we succeeded
+		m_VideoCapture = VideoCapture(device);
+	if (!m_VideoCapture.isOpened())
+		return false;
+	char key = 0;
+	Mat frame;
+	while (key==-1||key==0)
+	{
+		m_VideoCapture >> frame;
+		imshow("Camara", frame);
+		key = cvWaitKey(30);
+	}
+	cvvDestroyWindow("Camara");
 }
 
 CCapturador::~CCapturador()

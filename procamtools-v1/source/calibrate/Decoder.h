@@ -36,7 +36,7 @@ public:
 class CDecoder
 {
 	COptions* m_Info;
-	vector<Mat>& m_vCaptures;
+	vector<Mat> m_vCaptures;
 	vector<Mat> m_vGrayError[2];
 	vector<Mat> m_vGrayMap;
 	vector<Point2f> m_vCorrespondencePoints[2];
@@ -53,8 +53,8 @@ class CDecoder
 public:
 	Mat m_mGray[2];
 	Mat m_mMask[2];
-	CDecoder(COptions* Options, vector<Mat>& vCaptures);
-	bool Decode(float thres);
+	CDecoder(COptions* Options);
+	bool Decode(float thres, vector<Mat>& vCaptures);
 	void DecodeGray(int direction,float int_threashold);
 	Mat DecodeBinToGray(vector<Mat> diff);
 	int ConvertGrayToBinary(const unsigned long graycode);

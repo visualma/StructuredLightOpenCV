@@ -4,13 +4,14 @@
 #include "MatrixUtil.h"
 #define EPSILON 3.1281928192
 
-CDecoder::CDecoder(COptions* Options, vector<Mat>& vCaptures) : m_vCaptures(vCaptures), m_Info(Options)
+CDecoder::CDecoder(COptions* Options) : m_vCaptures(0), m_Info(Options)
 {
 
 }
 
-bool CDecoder::Decode(float thres)
+bool CDecoder::Decode(float thres, vector<Mat>& vCaptures)
 {
+	m_vCaptures = vCaptures;
 	CCapturador cap;
 	vector<Mat> temp;
 	if (m_Info->m_bHorizontal)
@@ -20,6 +21,7 @@ bool CDecoder::Decode(float thres)
 		m_mMask[0] = Mat::zeros(m_mGray[0].rows,m_mGray[0].cols, CV_8UC1);
 		cv::threshold(m_mGrayError[0], m_mMask[0], thres, 255, CV_THRESH_BINARY);
 		m_mMask[0].convertTo(m_mMask[0], CV_16UC1);
+		/*
 		if (m_Info->m_bPhase)
 		{
             vector<Mat>::iterator begin = m_vCaptures.begin() + m_Info->m_nNumPatterns / 2;
@@ -30,17 +32,18 @@ bool CDecoder::Decode(float thres)
 			UnwrapPhase(m_mPhaseMap[0], m_Info->m_nFringeInterval*m_Info->m_nNumFringes, m_mGray[0], m_mPhaseMap[0], m_mPhaseError[0]);
 		}
 		else
-			m_mPhaseError[0] = Mat(m_mGray[0].rows, m_mGray[0].cols, CV_32FC1);
+			*/
+		m_mPhaseError[0] = Mat(m_mGray[0].rows, m_mGray[0].cols, CV_32FC1);
 		CreateReliableMap(0);
 		m_mGray[0] = MaskMat(m_mGray[0], m_mMask[0],true);
 		temp.push_back(m_mGrayError[0]);
 		temp.push_back(m_mMask[0]);
-		Mat temp1 = Mat(m_mGray[0].rows,m_mGray[0].cols,CV_8UC1);
-		m_mGray[0].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
+		//Mat temp1 = Mat(m_mGray[0].rows,m_mGray[0].cols,CV_8UC1);
+		//m_mGray[0].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
 		temp.push_back(m_mGray[0]);
-		temp.push_back(temp1);
+		//temp.push_back(temp1);
 		temp.push_back(m_mPhaseError[0]);
-		imshow("Correspondence X", temp1);
+		//imshow("Correspondence X", temp1);
 	}
 	if (m_Info->m_bVertical)
 	{
@@ -49,6 +52,7 @@ bool CDecoder::Decode(float thres)
 		m_mMask[1] = Mat::zeros(m_mGray[1].rows, m_mGray[1].cols, CV_8UC1);
 		cv::threshold(m_mGrayError[1], m_mMask[1], thres, 255, CV_THRESH_BINARY);
 		m_mMask[1].convertTo(m_mMask[1], CV_16UC1);
+		/*
 		if (m_Info->m_bPhase)
 		{
             vector<Mat>::iterator begin = m_vCaptures.begin() + m_Info->m_nBasePatterns + m_Info->m_nNumPatterns / 2;
@@ -58,17 +62,17 @@ bool CDecoder::Decode(float thres)
 			m_mPhaseMap[1] = DecodePhaseImages(phaseImgs, 1);
 			UnwrapPhase(m_mPhaseMap[1], m_Info->m_nFringeInterval*m_Info->m_nNumFringes, m_mGray[1], m_mPhaseMap[1], m_mPhaseError[1]);
 		}
-		else
-			m_mPhaseError[1] = Mat(m_mGray[1].rows, m_mGray[1].cols, CV_32FC1);
+		else*/
+		m_mPhaseError[1] = Mat(m_mGray[1].rows, m_mGray[1].cols, CV_32FC1);
 		CreateReliableMap(1);
 		m_mGray[1] = MaskMat(m_mGray[1], m_mMask[1],true);
 		temp.push_back(m_mGrayError[1]);
 		temp.push_back(m_mMask[1]);
-		Mat temp1 = Mat(m_mGray[1].rows, m_mGray[1].cols, CV_8UC1);
-		m_mGray[1].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
-		imshow("Correspondence Y", temp1);
+		//Mat temp1 = Mat(m_mGray[1].rows, m_mGray[1].cols, CV_8UC1);
+		//m_mGray[1].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
+		//imshow("Correspondence Y", temp1);
 		temp.push_back(m_mGray[1]);
-		temp.push_back(temp1);
+		//temp.push_back(temp1);
 		temp.push_back(m_mPhaseError[1]);
 	}
 	if (m_Info->m_bHorizontal&&m_Info->m_bVertical)
@@ -76,8 +80,8 @@ bool CDecoder::Decode(float thres)
 		for (int y = 0; y < m_mMask[1].cols;y++)
 		for (int x = 0; x < m_mMask[1].rows; x++)
 		{
-			if (!m_mMask[1].at<uchar>(x, y))
-				m_mMask[0].at<uchar>(x, y) = 0;
+			if (!m_mMask[1].at<ushort>(x, y))
+				m_mMask[0].at<ushort>(x, y) = 0;
 			m_mPhaseError[0].at<float>(x, y) = std::min(m_mPhaseError[0].at<float>(x, y), m_mPhaseError[1].at<float>(x, y));
 		}
 	}
@@ -96,8 +100,8 @@ void CDecoder::DecodeGray(int dir,float int_threshold)
 	for (int i = 0; i < nbits; i++)
 	{
 		double maxVal, maxValComp, minVal, minValComp ;
-		Mat m = m_vCaptures[dir*(m_Info->m_nBasePatterns*2+m_Info->m_nNumFringes) + 2 * i].clone();
-		Mat m1 = m_vCaptures[dir*(m_Info->m_nBasePatterns * 2 + m_Info->m_nNumFringes) + 2 * i + 1].clone();
+		Mat m = m_vCaptures[dir*(m_Info->m_nBasePatterns*2) + 2 * i].clone();
+		Mat m1 = m_vCaptures[dir*(m_Info->m_nBasePatterns * 2) + 2 * i + 1].clone();
 		minMaxIdx(m, &minVal, &maxVal);
 		minMaxIdx(m1, &minValComp, &maxValComp);
 		float BrightesPixel = std::max(maxVal, maxValComp);
