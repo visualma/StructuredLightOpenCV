@@ -46,7 +46,7 @@ CCapturador::CCapturador(COptions* opt, string ruta) :  m_Options(opt)
 
 }
 
-bool CCapturador::CapturePatterns(int time,int device)
+bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool useComp)
 {
 	m_vCaptures.clear();
 	
@@ -73,8 +73,8 @@ bool CCapturador::CapturePatterns(int time,int device)
 	// Resize
 	unsigned int flags = (SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER);
 	flags &= ~SWP_NOSIZE;
-	unsigned int x = 0;
-	unsigned int y = 0;
+	unsigned int x = posX;
+	unsigned int y = posY;
 	unsigned int w = m_Options->m_nWidth;
 	unsigned int h = m_Options->m_nHeight;
 	SetWindowPos(win_handle, HWND_NOTOPMOST, x, y, w, h, flags);
@@ -82,8 +82,8 @@ bool CCapturador::CapturePatterns(int time,int device)
 	// Borderless
 	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
 	ShowWindow(win_handle, SW_SHOW);
-	cvMoveWindow("Patrones", 0, 0);
-	cvWaitKey(5000);
+	cvMoveWindow("Patrones", posX, posY);
+	//cvWaitKey(5000);
 	auto A = GetTickCount();
 	auto B = GetTickCount();
 	for (int i = 0;;)
@@ -96,14 +96,27 @@ bool CCapturador::CapturePatterns(int time,int device)
 		int C = B - A;
 		if (C>time || waitKey(30) >= 0)
 		{
-			//cout << "time = " << C << endl;
-			i++;
-			Mat capture = frame.clone();
-			Mat gray;
-			cv::cvtColor(capture, gray, CV_BGR2GRAY);
-			m_vCaptures.push_back(gray);
-			if (++nPatterns >= m_nPatterns)
-				break;
+			if (useComp)
+			{
+				i++;
+				Mat capture = frame.clone();
+				Mat gray;
+				cv::cvtColor(capture, gray, CV_BGR2GRAY);
+				m_vCaptures.push_back(gray);
+				if (++nPatterns >= m_nPatterns)
+					break;
+			}
+			else
+			{
+				i+=2;
+				Mat capture = frame.clone();
+				Mat gray;
+				cv::cvtColor(capture, gray, CV_BGR2GRAY);
+				m_vCaptures.push_back(gray);
+				nPatterns += 2;
+				if (nPatterns >= m_nPatterns)
+					break;
+			}
 			A = GetTickCount();
 		};
 	}
@@ -326,7 +339,7 @@ m_bPhase(fringes)
 			*stdout = *fp;
 			char *pBuffer = (char*)malloc(32);
 			setvbuf(stdout, pBuffer, _IOFBF, 32);
-			SetConsoleTitle(TEXT("Structured Light Mapping V1 Josué Page Vizcaíno"));
+			SetConsoleTitle(TEXT("Structured Light Mapping V1 Josue Page Vizcaino"));
 		}
 	}
 }

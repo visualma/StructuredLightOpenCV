@@ -88,7 +88,7 @@ bool CDecoder::Decode(float thres, vector<Mat>& vCaptures)
 	//m_mGray[0] = MaskMat(m_mGray[0], m_mMask[0],false);
 	//m_mGray[1] = MaskMat(m_mGray[1], m_mMask[0],false);
 	temp.push_back(m_mMask[0]);
-	cap.SerializeCaptures(temp, "mask");
+	//cap.SerializeCaptures(temp, "mask");
 	return true;
 }
 
@@ -99,20 +99,35 @@ void CDecoder::DecodeGray(int dir,float int_threshold)
 	m_mGrayError[dir] = Mat::zeros(cvSize(m_vCaptures[0].cols, m_vCaptures[0].rows), CV_8UC1);
 	for (int i = 0; i < nbits; i++)
 	{
-		double maxVal, maxValComp, minVal, minValComp ;
-		Mat m = m_vCaptures[dir*(m_Info->m_nBasePatterns*2) + 2 * i].clone();
-		Mat m1 = m_vCaptures[dir*(m_Info->m_nBasePatterns * 2) + 2 * i + 1].clone();
-		minMaxIdx(m, &minVal, &maxVal);
-		minMaxIdx(m1, &minValComp, &maxValComp);
-		float BrightesPixel = std::max(maxVal, maxValComp);
-		Mat difference;
-		difference = m - m1;
-		diff.insert(diff.begin(), difference);
-		float threshold = BrightesPixel*int_threshold;
-		Mat result;
-		m_fDivisor[dir] = BrightesPixel / m_Info->GetNumBits(dir);
-		cv::threshold(difference, result, threshold, m_fDivisor[dir], CV_THRESH_BINARY);
-		m_mGrayError[dir] += result;
+		if (m_Info->m_bComplementary)
+		{
+			double maxVal, maxValComp, minVal, minValComp;
+			Mat m = m_vCaptures[dir*(m_Info->m_nBasePatterns * 2) + 2 * i].clone();
+			Mat m1 = m_vCaptures[dir*(m_Info->m_nBasePatterns * 2) + 2 * i + 1].clone();
+			minMaxIdx(m, &minVal, &maxVal);
+			minMaxIdx(m1, &minValComp, &maxValComp);
+			float BrightesPixel = std::max(maxVal, maxValComp);
+			Mat difference;
+			difference = m - m1;
+			diff.insert(diff.begin(), difference);
+			float threshold = BrightesPixel*int_threshold;
+			Mat result;
+			m_fDivisor[dir] = BrightesPixel / m_Info->GetNumBits(dir);
+			cv::threshold(difference, result, threshold, m_fDivisor[dir], CV_THRESH_BINARY);
+			m_mGrayError[dir] += result;
+		}
+		else
+		{
+			double maxVal, minVal;
+			Mat m = m_vCaptures[dir*(m_Info->m_nBasePatterns) + i].clone();
+			minMaxIdx(m, &minVal, &maxVal);
+			diff.insert(diff.begin(), m);
+			float threshold = maxVal*int_threshold;
+			m_fDivisor[dir] = maxVal / m_Info->GetNumBits(dir);
+			Mat result;
+			cv::threshold(m, result, threshold, m_fDivisor[dir], CV_THRESH_BINARY);
+			m_mGrayError[dir] += result;
+		}
 	}
 	m_mGray[dir] = Mat::zeros(diff[0].rows,diff[0].cols,CV_16UC1);
 	m_mGray[dir] = DecodeBinToGray(diff);

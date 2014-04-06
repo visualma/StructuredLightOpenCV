@@ -35,12 +35,20 @@ namespace calibrate {
 		CCapturador* m_Cap;
 		CDecoder* m_decoder;
 		COptions* m_options;
+		Renderer* m_renderer;
 		options_t* m_opt;
 		IplImage* frame;
+		CProCamCalibrate* m_calib;
 		bool m_bShowWebcam;
 		bool m_bStartingWorker;
+		bool m_bMatrixReady = false;
 		int camBusy = 0;
 		int camDevice = 0;
+		slib::CMatrix<3, 3, double>* m_cam_int, *m_proj_int;
+		slib::CMatrix<3, 4, double> *m_proj_ext;
+		double m_cam_dist, m_proj_dist;
+
+
 	private: System::Windows::Forms::ToolStripMenuItem^  startCaptureToolStripMenuItem;
 	private: System::Windows::Forms::TabControl^  tabControl1;
 	private: System::Windows::Forms::TabPage^  tabPage1;
@@ -54,6 +62,22 @@ namespace calibrate {
 	private: System::Windows::Forms::PictureBox^  pictureCorrX;
 	private: System::Windows::Forms::TabPage^  tabPage5;
 	private: System::Windows::Forms::PictureBox^  pictureCorrY;
+	private: System::Windows::Forms::GroupBox^  groupBox1;
+	private: System::Windows::Forms::Label^  label3;
+	private: System::Windows::Forms::Label^  label2;
+	private: System::Windows::Forms::TextBox^  textBoxProyY;
+
+	private: System::Windows::Forms::TextBox^  textBoxProyX;
+
+	private: System::Windows::Forms::Label^  label1;
+	private: System::Windows::Forms::CheckBox^  checkBoxComplementary;
+
+	private: System::Windows::Forms::Label^  label4;
+	private: System::Windows::Forms::ToolStripMenuItem^  calibrateCameraProjectorToolStripMenuItem;
+	private: System::Windows::Forms::ToolStripMenuItem^  loadCalibrationMatricesToolStripMenuItem;
+	private: System::Windows::Forms::ToolStripMenuItem^  saveCalibrationMatrixToolStripMenuItem;
+	private: System::Windows::Forms::ToolStripMenuItem^  triangulateToolStripMenuItem1;
+	private: System::Windows::Forms::ToolStripMenuItem^  exportAsOBJToolStripMenuItem;
 
 
 
@@ -85,7 +109,7 @@ namespace calibrate {
 	private: System::Windows::Forms::ToolStripMenuItem^  loadCapturesToolStripMenuItem;
 	private: System::Windows::Forms::ToolStripMenuItem^  calibrateToolStripMenuItem;
 	private: System::Windows::Forms::ToolStripMenuItem^  triangulateToolStripMenuItem;
-	private: System::Windows::Forms::ToolStripMenuItem^  dVisualizationToolStripMenuItem;
+
 	private: System::Windows::Forms::ToolStripMenuItem^  captureToolStripMenuItem;
 	private: System::Windows::Forms::ToolStripMenuItem^  loadCapturesToolStripMenuItem1;
 	private: System::Windows::Forms::ToolStripMenuItem^  saveCapturesToolStripMenuItem;
@@ -111,8 +135,10 @@ namespace calibrate {
 			this->structuredLightToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->loadCapturesToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->calibrateToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->calibrateCameraProjectorToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->loadCalibrationMatricesToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->saveCalibrationMatrixToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->triangulateToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
-			this->dVisualizationToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->captureToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->loadCapturesToolStripMenuItem1 = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->saveCapturesToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
@@ -122,34 +148,45 @@ namespace calibrate {
 			this->tabControl1 = (gcnew System::Windows::Forms::TabControl());
 			this->tabPage1 = (gcnew System::Windows::Forms::TabPage());
 			this->pictureCamera = (gcnew System::Windows::Forms::PictureBox());
-			this->tabPage3 = (gcnew System::Windows::Forms::TabPage());
 			this->tabPage2 = (gcnew System::Windows::Forms::TabPage());
 			this->pictureCapture = (gcnew System::Windows::Forms::PictureBox());
-			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
-			this->tabPage4 = (gcnew System::Windows::Forms::TabPage());
-			this->tabPage5 = (gcnew System::Windows::Forms::TabPage());
+			this->tabPage3 = (gcnew System::Windows::Forms::TabPage());
 			this->pictureMask = (gcnew System::Windows::Forms::PictureBox());
+			this->tabPage4 = (gcnew System::Windows::Forms::TabPage());
 			this->pictureCorrX = (gcnew System::Windows::Forms::PictureBox());
+			this->tabPage5 = (gcnew System::Windows::Forms::TabPage());
 			this->pictureCorrY = (gcnew System::Windows::Forms::PictureBox());
+			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
+			this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
+			this->checkBoxComplementary = (gcnew System::Windows::Forms::CheckBox());
+			this->label3 = (gcnew System::Windows::Forms::Label());
+			this->label2 = (gcnew System::Windows::Forms::Label());
+			this->textBoxProyY = (gcnew System::Windows::Forms::TextBox());
+			this->textBoxProyX = (gcnew System::Windows::Forms::TextBox());
+			this->label1 = (gcnew System::Windows::Forms::Label());
+			this->label4 = (gcnew System::Windows::Forms::Label());
+			this->triangulateToolStripMenuItem1 = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->exportAsOBJToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->menuStrip1->SuspendLayout();
 			this->tabControl1->SuspendLayout();
 			this->tabPage1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureCamera))->BeginInit();
-			this->tabPage3->SuspendLayout();
 			this->tabPage2->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureCapture))->BeginInit();
-			this->tabPage4->SuspendLayout();
-			this->tabPage5->SuspendLayout();
+			this->tabPage3->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureMask))->BeginInit();
+			this->tabPage4->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureCorrX))->BeginInit();
+			this->tabPage5->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureCorrY))->BeginInit();
+			this->groupBox1->SuspendLayout();
 			this->SuspendLayout();
 			// 
 			// menuStrip1
 			// 
-			this->menuStrip1->Items->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(5) {
+			this->menuStrip1->Items->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(4) {
 				this->structuredLightToolStripMenuItem,
-					this->calibrateToolStripMenuItem, this->triangulateToolStripMenuItem, this->dVisualizationToolStripMenuItem, this->captureToolStripMenuItem
+					this->calibrateToolStripMenuItem, this->triangulateToolStripMenuItem, this->captureToolStripMenuItem
 			});
 			this->menuStrip1->Location = System::Drawing::Point(0, 0);
 			this->menuStrip1->Name = L"menuStrip1";
@@ -172,21 +209,44 @@ namespace calibrate {
 			// 
 			// calibrateToolStripMenuItem
 			// 
+			this->calibrateToolStripMenuItem->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(3) {
+				this->calibrateCameraProjectorToolStripMenuItem,
+					this->loadCalibrationMatricesToolStripMenuItem, this->saveCalibrationMatrixToolStripMenuItem
+			});
 			this->calibrateToolStripMenuItem->Name = L"calibrateToolStripMenuItem";
 			this->calibrateToolStripMenuItem->Size = System::Drawing::Size(66, 20);
 			this->calibrateToolStripMenuItem->Text = L"&Calibrate";
 			// 
+			// calibrateCameraProjectorToolStripMenuItem
+			// 
+			this->calibrateCameraProjectorToolStripMenuItem->Name = L"calibrateCameraProjectorToolStripMenuItem";
+			this->calibrateCameraProjectorToolStripMenuItem->Size = System::Drawing::Size(218, 22);
+			this->calibrateCameraProjectorToolStripMenuItem->Text = L"&Calibrate Camera/Projector";
+			this->calibrateCameraProjectorToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::calibrateCameraProjectorToolStripMenuItem_Click);
+			// 
+			// loadCalibrationMatricesToolStripMenuItem
+			// 
+			this->loadCalibrationMatricesToolStripMenuItem->Name = L"loadCalibrationMatricesToolStripMenuItem";
+			this->loadCalibrationMatricesToolStripMenuItem->Size = System::Drawing::Size(218, 22);
+			this->loadCalibrationMatricesToolStripMenuItem->Text = L"Load Calibration Matrices";
+			this->loadCalibrationMatricesToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::loadCalibrationMatricesToolStripMenuItem_Click);
+			// 
+			// saveCalibrationMatrixToolStripMenuItem
+			// 
+			this->saveCalibrationMatrixToolStripMenuItem->Name = L"saveCalibrationMatrixToolStripMenuItem";
+			this->saveCalibrationMatrixToolStripMenuItem->Size = System::Drawing::Size(218, 22);
+			this->saveCalibrationMatrixToolStripMenuItem->Text = L"Save Calibration Matrix";
+			this->saveCalibrationMatrixToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::saveCalibrationMatrixToolStripMenuItem_Click);
+			// 
 			// triangulateToolStripMenuItem
 			// 
+			this->triangulateToolStripMenuItem->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(2) {
+				this->triangulateToolStripMenuItem1,
+					this->exportAsOBJToolStripMenuItem
+			});
 			this->triangulateToolStripMenuItem->Name = L"triangulateToolStripMenuItem";
 			this->triangulateToolStripMenuItem->Size = System::Drawing::Size(79, 20);
 			this->triangulateToolStripMenuItem->Text = L"&Triangulate";
-			// 
-			// dVisualizationToolStripMenuItem
-			// 
-			this->dVisualizationToolStripMenuItem->Name = L"dVisualizationToolStripMenuItem";
-			this->dVisualizationToolStripMenuItem->Size = System::Drawing::Size(102, 20);
-			this->dVisualizationToolStripMenuItem->Text = L"&3D Visualization";
 			// 
 			// captureToolStripMenuItem
 			// 
@@ -201,28 +261,28 @@ namespace calibrate {
 			// loadCapturesToolStripMenuItem1
 			// 
 			this->loadCapturesToolStripMenuItem1->Name = L"loadCapturesToolStripMenuItem1";
-			this->loadCapturesToolStripMenuItem1->Size = System::Drawing::Size(150, 22);
+			this->loadCapturesToolStripMenuItem1->Size = System::Drawing::Size(152, 22);
 			this->loadCapturesToolStripMenuItem1->Text = L"Load Captures";
 			this->loadCapturesToolStripMenuItem1->Click += gcnew System::EventHandler(this, &MyForm::loadCapturesToolStripMenuItem1_Click);
 			// 
 			// saveCapturesToolStripMenuItem
 			// 
 			this->saveCapturesToolStripMenuItem->Name = L"saveCapturesToolStripMenuItem";
-			this->saveCapturesToolStripMenuItem->Size = System::Drawing::Size(150, 22);
+			this->saveCapturesToolStripMenuItem->Size = System::Drawing::Size(152, 22);
 			this->saveCapturesToolStripMenuItem->Text = L"Save Captures";
 			this->saveCapturesToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::saveCapturesToolStripMenuItem_Click);
 			// 
 			// testWebcamToolStripMenuItem
 			// 
 			this->testWebcamToolStripMenuItem->Name = L"testWebcamToolStripMenuItem";
-			this->testWebcamToolStripMenuItem->Size = System::Drawing::Size(150, 22);
+			this->testWebcamToolStripMenuItem->Size = System::Drawing::Size(152, 22);
 			this->testWebcamToolStripMenuItem->Text = L"Test Webcam";
 			this->testWebcamToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::testWebcamToolStripMenuItem_Click);
 			// 
 			// startCaptureToolStripMenuItem
 			// 
 			this->startCaptureToolStripMenuItem->Name = L"startCaptureToolStripMenuItem";
-			this->startCaptureToolStripMenuItem->Size = System::Drawing::Size(150, 22);
+			this->startCaptureToolStripMenuItem->Size = System::Drawing::Size(152, 22);
 			this->startCaptureToolStripMenuItem->Text = L"Start Capture";
 			this->startCaptureToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::startCaptureToolStripMenuItem_Click);
 			// 
@@ -262,16 +322,6 @@ namespace calibrate {
 			this->pictureCamera->TabIndex = 1;
 			this->pictureCamera->TabStop = false;
 			// 
-			// tabPage3
-			// 
-			this->tabPage3->Controls->Add(this->pictureMask);
-			this->tabPage3->Location = System::Drawing::Point(4, 22);
-			this->tabPage3->Name = L"tabPage3";
-			this->tabPage3->Size = System::Drawing::Size(640, 480);
-			this->tabPage3->TabIndex = 2;
-			this->tabPage3->Text = L"Mask";
-			this->tabPage3->UseVisualStyleBackColor = true;
-			// 
 			// tabPage2
 			// 
 			this->tabPage2->Controls->Add(this->pictureCapture);
@@ -291,11 +341,23 @@ namespace calibrate {
 			this->pictureCapture->TabIndex = 2;
 			this->pictureCapture->TabStop = false;
 			// 
-			// backgroundWorker1
+			// tabPage3
 			// 
-			this->backgroundWorker1->WorkerReportsProgress = true;
-			this->backgroundWorker1->DoWork += gcnew System::ComponentModel::DoWorkEventHandler(this, &MyForm::backgroundWorker1_DoWork);
-			this->backgroundWorker1->ProgressChanged += gcnew System::ComponentModel::ProgressChangedEventHandler(this, &MyForm::backgroundWorker1_ProgressChanged);
+			this->tabPage3->Controls->Add(this->pictureMask);
+			this->tabPage3->Location = System::Drawing::Point(4, 22);
+			this->tabPage3->Name = L"tabPage3";
+			this->tabPage3->Size = System::Drawing::Size(640, 480);
+			this->tabPage3->TabIndex = 2;
+			this->tabPage3->Text = L"Mask";
+			this->tabPage3->UseVisualStyleBackColor = true;
+			// 
+			// pictureMask
+			// 
+			this->pictureMask->Location = System::Drawing::Point(1, 1);
+			this->pictureMask->Name = L"pictureMask";
+			this->pictureMask->Size = System::Drawing::Size(640, 480);
+			this->pictureMask->TabIndex = 3;
+			this->pictureMask->TabStop = false;
 			// 
 			// tabPage4
 			// 
@@ -307,6 +369,14 @@ namespace calibrate {
 			this->tabPage4->Text = L"Correspondence X";
 			this->tabPage4->UseVisualStyleBackColor = true;
 			// 
+			// pictureCorrX
+			// 
+			this->pictureCorrX->Location = System::Drawing::Point(1, 1);
+			this->pictureCorrX->Name = L"pictureCorrX";
+			this->pictureCorrX->Size = System::Drawing::Size(640, 480);
+			this->pictureCorrX->TabIndex = 3;
+			this->pictureCorrX->TabStop = false;
+			// 
 			// tabPage5
 			// 
 			this->tabPage5->Controls->Add(this->pictureCorrY);
@@ -317,22 +387,6 @@ namespace calibrate {
 			this->tabPage5->Text = L"Correspondence Y";
 			this->tabPage5->UseVisualStyleBackColor = true;
 			// 
-			// pictureMask
-			// 
-			this->pictureMask->Location = System::Drawing::Point(1, 1);
-			this->pictureMask->Name = L"pictureMask";
-			this->pictureMask->Size = System::Drawing::Size(640, 480);
-			this->pictureMask->TabIndex = 3;
-			this->pictureMask->TabStop = false;
-			// 
-			// pictureCorrX
-			// 
-			this->pictureCorrX->Location = System::Drawing::Point(1, 1);
-			this->pictureCorrX->Name = L"pictureCorrX";
-			this->pictureCorrX->Size = System::Drawing::Size(640, 480);
-			this->pictureCorrX->TabIndex = 3;
-			this->pictureCorrX->TabStop = false;
-			// 
 			// pictureCorrY
 			// 
 			this->pictureCorrY->Location = System::Drawing::Point(1, 1);
@@ -341,11 +395,113 @@ namespace calibrate {
 			this->pictureCorrY->TabIndex = 3;
 			this->pictureCorrY->TabStop = false;
 			// 
+			// backgroundWorker1
+			// 
+			this->backgroundWorker1->WorkerReportsProgress = true;
+			this->backgroundWorker1->DoWork += gcnew System::ComponentModel::DoWorkEventHandler(this, &MyForm::backgroundWorker1_DoWork);
+			this->backgroundWorker1->ProgressChanged += gcnew System::ComponentModel::ProgressChangedEventHandler(this, &MyForm::backgroundWorker1_ProgressChanged);
+			// 
+			// groupBox1
+			// 
+			this->groupBox1->Controls->Add(this->checkBoxComplementary);
+			this->groupBox1->Controls->Add(this->label3);
+			this->groupBox1->Controls->Add(this->label2);
+			this->groupBox1->Controls->Add(this->textBoxProyY);
+			this->groupBox1->Controls->Add(this->textBoxProyX);
+			this->groupBox1->Controls->Add(this->label1);
+			this->groupBox1->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 8.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->groupBox1->Location = System::Drawing::Point(662, 67);
+			this->groupBox1->Name = L"groupBox1";
+			this->groupBox1->Size = System::Drawing::Size(193, 481);
+			this->groupBox1->TabIndex = 2;
+			this->groupBox1->TabStop = false;
+			// 
+			// checkBoxComplementary
+			// 
+			this->checkBoxComplementary->AutoSize = true;
+			this->checkBoxComplementary->Location = System::Drawing::Point(11, 77);
+			this->checkBoxComplementary->Name = L"checkBoxComplementary";
+			this->checkBoxComplementary->Size = System::Drawing::Size(162, 17);
+			this->checkBoxComplementary->TabIndex = 5;
+			this->checkBoxComplementary->Text = L"Use Complementary Patterns";
+			this->checkBoxComplementary->UseVisualStyleBackColor = true;
+			// 
+			// label3
+			// 
+			this->label3->AutoSize = true;
+			this->label3->Location = System::Drawing::Point(10, 36);
+			this->label3->Name = L"label3";
+			this->label3->Size = System::Drawing::Size(14, 13);
+			this->label3->TabIndex = 4;
+			this->label3->Text = L"X";
+			// 
+			// label2
+			// 
+			this->label2->AutoSize = true;
+			this->label2->Location = System::Drawing::Point(78, 36);
+			this->label2->Name = L"label2";
+			this->label2->Size = System::Drawing::Size(14, 13);
+			this->label2->TabIndex = 3;
+			this->label2->Text = L"Y";
+			// 
+			// textBoxProyY
+			// 
+			this->textBoxProyY->Location = System::Drawing::Point(93, 33);
+			this->textBoxProyY->Name = L"textBoxProyY";
+			this->textBoxProyY->Size = System::Drawing::Size(53, 20);
+			this->textBoxProyY->TabIndex = 2;
+			this->textBoxProyY->Text = L"0";
+			// 
+			// textBoxProyX
+			// 
+			this->textBoxProyX->Location = System::Drawing::Point(25, 33);
+			this->textBoxProyX->Name = L"textBoxProyX";
+			this->textBoxProyX->Size = System::Drawing::Size(53, 20);
+			this->textBoxProyX->TabIndex = 1;
+			this->textBoxProyX->Text = L"1920";
+			// 
+			// label1
+			// 
+			this->label1->AutoSize = true;
+			this->label1->Location = System::Drawing::Point(8, 17);
+			this->label1->Name = L"label1";
+			this->label1->Size = System::Drawing::Size(108, 13);
+			this->label1->TabIndex = 0;
+			this->label1->Text = L"Projector Coordinates";
+			// 
+			// label4
+			// 
+			this->label4->AutoSize = true;
+			this->label4->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 9.75F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->label4->Location = System::Drawing::Point(728, 48);
+			this->label4->Name = L"label4";
+			this->label4->Size = System::Drawing::Size(64, 16);
+			this->label4->TabIndex = 3;
+			this->label4->Text = L"Settings";
+			// 
+			// triangulateToolStripMenuItem1
+			// 
+			this->triangulateToolStripMenuItem1->Name = L"triangulateToolStripMenuItem1";
+			this->triangulateToolStripMenuItem1->Size = System::Drawing::Size(152, 22);
+			this->triangulateToolStripMenuItem1->Text = L"&Triangulate";
+			this->triangulateToolStripMenuItem1->Click += gcnew System::EventHandler(this, &MyForm::triangulateToolStripMenuItem1_Click);
+			// 
+			// exportAsOBJToolStripMenuItem
+			// 
+			this->exportAsOBJToolStripMenuItem->Name = L"exportAsOBJToolStripMenuItem";
+			this->exportAsOBJToolStripMenuItem->Size = System::Drawing::Size(152, 22);
+			this->exportAsOBJToolStripMenuItem->Text = L"&Export as OBJ";
+			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
+			this->BackColor = System::Drawing::Color::Snow;
 			this->ClientSize = System::Drawing::Size(855, 587);
+			this->Controls->Add(this->label4);
+			this->Controls->Add(this->groupBox1);
 			this->Controls->Add(this->tabControl1);
 			this->Controls->Add(this->menuStrip1);
 			this->MainMenuStrip = this->menuStrip1;
@@ -357,14 +513,16 @@ namespace calibrate {
 			this->tabControl1->ResumeLayout(false);
 			this->tabPage1->ResumeLayout(false);
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureCamera))->EndInit();
-			this->tabPage3->ResumeLayout(false);
 			this->tabPage2->ResumeLayout(false);
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureCapture))->EndInit();
-			this->tabPage4->ResumeLayout(false);
-			this->tabPage5->ResumeLayout(false);
+			this->tabPage3->ResumeLayout(false);
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureMask))->EndInit();
+			this->tabPage4->ResumeLayout(false);
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureCorrX))->EndInit();
+			this->tabPage5->ResumeLayout(false);
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureCorrY))->EndInit();
+			this->groupBox1->ResumeLayout(false);
+			this->groupBox1->PerformLayout();
 			this->ResumeLayout(false);
 			this->PerformLayout();
 
@@ -372,18 +530,23 @@ namespace calibrate {
 #pragma endregion
 	private: System::Void MyForm_Load(System::Object^  sender, System::EventArgs^  e)
 	{
-				 m_options = new COptions(1024, 768, 10, 4, true, true, true, false,true);
+				 m_options = new COptions(1024, 768, 10, 4, true, true, true, false, true);
 				 string ruta = "../resources/Patterns/pattern-0";
 				 m_Cap = new CCapturador(m_options, ruta);
+				 m_renderer = new Renderer();
 				 m_bShowWebcam = false;
 				 m_bStartingWorker = true;
 				 m_opt = new options_t();
 				 m_opt->debug = true;
 				 m_decoder = new CDecoder(m_options);
+				 m_calib = new CProCamCalibrate(*m_opt);
+				 m_cam_int = new slib::CMatrix<3, 3, double>;
+				 m_proj_int = new slib::CMatrix<3, 3, double>;
+				 m_proj_ext = new slib::CMatrix<3, 4, double>;
 	}
 	private: System::Void loadCapturesToolStripMenuItem1_Click(System::Object^  sender, System::EventArgs^  e)
 	{
-				 
+
 				 IO::Stream^ myStream;
 				 OpenFileDialog^ openFileDialog1 = gcnew OpenFileDialog;
 
@@ -398,7 +561,7 @@ namespace calibrate {
 					 {
 						 System::String^ ruta = openFileDialog1->FileName;
 						 System::String^ ruta1 = ruta->Remove(ruta->Length - 6);
-						 array<Char,1>^ delimitador = ruta1->ToCharArray();
+						 array<Char, 1>^ delimitador = ruta1->ToCharArray();
 						 std::string ruta2;
 						 for (int i = 0; i < delimitador->Length; i++)
 							 ruta2 += delimitador[i];
@@ -409,13 +572,17 @@ namespace calibrate {
 							 cvtColor(m_Cap->m_vCaptures[0], b, CV_GRAY2RGB);
 							 DrawCvImage(&(IplImage)b, pictureCapture);
 
+							 if (checkBoxComplementary->Checked)
+								 m_decoder->m_Info->m_bComplementary = true;
+							 else
+								 m_decoder->m_Info->m_bComplementary = false;
 							 bool captura = m_decoder->Decode(25, m_Cap->m_vCaptures);
 							 if (captura)
 							 {
 								 Mat b;
-								 cvtColor(m_decoder->m_mMask[0], b, CV_GRAY2RGB);
+								 m_decoder->m_mMask[0].convertTo(b, CV_8UC1);
+								 cvtColor(b, b, CV_GRAY2RGB);
 								 DrawCvImage(&(IplImage)b, pictureMask);
-
 								 Mat temp1 = Mat(m_decoder->m_mGray[0].rows, m_decoder->m_mGray[0].cols, CV_8UC1);
 								 m_decoder->m_mGray[0].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
 								 cvtColor(temp1, b, CV_GRAY2RGB);
@@ -426,115 +593,101 @@ namespace calibrate {
 							 }
 
 						 }
-						 
+
 						 myStream->Close();
 					 }
 				 }
-				 
+
 				 /*
 				 try
 				 {
-					 Renderer a;
-					 //a.render("mesh1.ply");
-					 COptions* options = new COptions(1024, 768, 10, 4, true, true, true, false,true);
-					 options_t opt;
-					 opt.debug = true;
-					 string ruta = "../resources/Patterns/pattern-0";
+				 Renderer a;
+				 //a.render("mesh1.ply");
+				 COptions* options = new COptions(1024, 768, 10, 4, true, true, true, false,true);
+				 options_t opt;
+				 opt.debug = true;
+				 string ruta = "../resources/Patterns/pattern-0";
 
-					 CCapturador* cap = new CCapturador(options, ruta);
-					 cap->CapturePatterns(750,0);
-					 //cap->SerializeCaptures(cap->m_vCaptures, "CasaV3-");
-					 //string ruta2 = cap->SerializeCaptures(cap->m_vCaptures, "CasaV2");
-					 cap->LoadCapturesFromFiles("../resources/Captures/CasaV3--1396243862/Capture-");
-					 CDecoder* decoder = new CDecoder(options, cap->m_vCaptures);
-					 decoder->Decode(75);
-					 CProCamCalibrate calib(opt);
+				 CCapturador* cap = new CCapturador(options, ruta);
+				 cap->CapturePatterns(750,0);
+				 //cap->SerializeCaptures(cap->m_vCaptures, "CasaV3-");
+				 //string ruta2 = cap->SerializeCaptures(cap->m_vCaptures, "CasaV2");
+				 cap->LoadCapturesFromFiles("../resources/Captures/CasaV3--1396243862/Capture-");
+				 CDecoder* decoder = new CDecoder(options, cap->m_vCaptures);
+				 decoder->Decode(75);
+				 CProCamCalibrate calib(opt);
 
-					 cvWaitKey();
-					 cvDestroyAllWindows();
-					 slib::Field<2, float> m_mask;
-					 
-					 //Mat mask = imread("mascara.bmp", CV_LOAD_IMAGE_GRAYSCALE);
-					 //mask.convertTo(mask, CV_8U);
-					 //printf("chanesl %d %d", mask.channels(), decoder->m_mGray[0].channels());
+				 cvWaitKey();
+				 cvDestroyAllWindows();
+				 slib::Field<2, float> m_mask;
 
-					 Mat b = decoder->m_mMask[1].clone();// Mat(640, 480, CV_16UC1);
-					 //cv::resize(decoder->m_mMask[1], b, cv::Size(640, 480), 0, 0, cv::INTER_CUBIC);
-					 m_mask.Initialize(b.cols, decoder->m_mMask[1].rows);
-					 for (int i = 0; i < b.cols; i++)
-					 for (int j = 0; j < b.rows; j++)
-						 m_mask.cell(i, j) = b.at<ushort>(j, i);
+				 //Mat mask = imread("mascara.bmp", CV_LOAD_IMAGE_GRAYSCALE);
+				 //mask.convertTo(mask, CV_8U);
+				 //printf("chanesl %d %d", mask.channels(), decoder->m_mGray[0].channels());
 
-					 
-					 slib::Field<2, float> m_phase_map[2];
-					 for (int k = 0; k < 2; k++)
-					 {
+				 Mat b = decoder->m_mMask[1].clone();// Mat(640, 480, CV_16UC1);
+				 //cv::resize(decoder->m_mMask[1], b, cv::Size(640, 480), 0, 0, cv::INTER_CUBIC);
+				 m_mask.Initialize(b.cols, decoder->m_mMask[1].rows);
+				 for (int i = 0; i < b.cols; i++)
+				 for (int j = 0; j < b.rows; j++)
+				 m_mask.cell(i, j) = b.at<ushort>(j, i);
 
-//						 Mat a = Mat(640, 480, CV_16UC1);
-//						 cv::resize(decoder->m_mGray[k], a, cv::Size(640, 480), 0, 0, cv::INTER_CUBIC);
-						 //m_phase_map[k].Initialize(decoder->m_mGray[k].cols, decoder->m_mGray[k].rows);
-						 Mat a = decoder->m_mGray[k].clone();
-						 m_phase_map[k].Initialize(a.cols, a.rows);
-						 for (int i = 0; i < a.cols; i++)
-						 for (int j = 0; j < a.rows; j++)
-						 //m_phase_map[k].cell(i, j) = decoder->m_mGray[k].at<ushort>(j, i);
-						 m_phase_map[k].cell(i, j) = a.at<ushort>(j, i);
-					 }
-					 //Mat temp1 = Mat(decoder->m_mGray[1].rows, decoder->m_mGray[1].cols, CV_8UC1);
-					 //decoder->m_mGray[1].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
-					 //imshow("mascara1", temp1);
-					 //imshow("mascara2", mask);
-					 cvWaitKey();
-					 cvDestroyAllWindows();
-					 calib.Calibrate(m_phase_map[0], m_phase_map[1], m_mask);
-					 
-					 std::ostringstream oss3;
-					 oss3 << ruta2 << "//cam-intrinsic.txt";
-					 calib.WriteCamIntrinsic(oss3.str());
-					 std::ostringstream oss4;
-					 oss4 << ruta2 << "//cam-distortion.txt";
-					 calib.WriteCamDistortion(oss4.str());
-					 std::ostringstream oss5;
-					 oss5 <<  ruta2 << "//pro-intrinsic.txt";
-					 calib.WriteProIntrinsic(oss5.str());
-					 std::ostringstream oss6;
-					 oss6 <<  ruta2 << "//pro-distortion.txt";
-					 calib.WriteProDistortion(oss6.str());
-					 std::ostringstream oss7;
-					 oss7 << ruta2 << "//pro-extrinsic.txt";
-					 calib.WriteProExtrinsic(oss7.str());
-					 
-					 std::ostringstream oss8;
-					 oss8 << "mesh1.ply";
 
-					 //Renderer a;
-
-					 a.makeTriangulation(opt, m_phase_map[0], m_phase_map[1], m_mask, calib.m_pro_int, calib.m_cam_int, calib.m_pro_ext, calib.m_pro_dist, calib.m_cam_dist,oss8.str());
-					 a.render("mesh1.ply");
-					 cvWaitKey();
-					 }
-					 catch (const std::exception& e)
-					 {
-					 fprintf(stderr,"error: %s\n", e.what());
-					 
-					 }
-					 */
-	}
-	private: System::Void testWebcamToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
-	{
-				 if (!m_bShowWebcam)
+				 slib::Field<2, float> m_phase_map[2];
+				 for (int k = 0; k < 2; k++)
 				 {
 
-					 m_bShowWebcam = true;
-					 if (!backgroundWorker1->IsBusy)
-						backgroundWorker1->RunWorkerAsync(10);
+				 //						 Mat a = Mat(640, 480, CV_16UC1);
+				 //						 cv::resize(decoder->m_mGray[k], a, cv::Size(640, 480), 0, 0, cv::INTER_CUBIC);
+				 //m_phase_map[k].Initialize(decoder->m_mGray[k].cols, decoder->m_mGray[k].rows);
+				 Mat a = decoder->m_mGray[k].clone();
+				 m_phase_map[k].Initialize(a.cols, a.rows);
+				 for (int i = 0; i < a.cols; i++)
+				 for (int j = 0; j < a.rows; j++)
+				 //m_phase_map[k].cell(i, j) = decoder->m_mGray[k].at<ushort>(j, i);
+				 m_phase_map[k].cell(i, j) = a.at<ushort>(j, i);
 				 }
-				 else
+				 //Mat temp1 = Mat(decoder->m_mGray[1].rows, decoder->m_mGray[1].cols, CV_8UC1);
+				 //decoder->m_mGray[1].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
+				 //imshow("mascara1", temp1);
+				 //imshow("mascara2", mask);
+				 cvWaitKey();
+				 cvDestroyAllWindows();
+				 calib.Calibrate(m_phase_map[0], m_phase_map[1], m_mask);
+
+				 std::ostringstream oss3;
+				 oss3 << ruta2 << "//cam-intrinsic.txt";
+				 calib.WriteCamIntrinsic(oss3.str());
+				 std::ostringstream oss4;
+				 oss4 << ruta2 << "//cam-distortion.txt";
+				 calib.WriteCamDistortion(oss4.str());
+				 std::ostringstream oss5;
+				 oss5 <<  ruta2 << "//pro-intrinsic.txt";
+				 calib.WriteProIntrinsic(oss5.str());
+				 std::ostringstream oss6;
+				 oss6 <<  ruta2 << "//pro-distortion.txt";
+				 calib.WriteProDistortion(oss6.str());
+				 std::ostringstream oss7;
+				 oss7 << ruta2 << "//pro-extrinsic.txt";
+				 calib.WriteProExtrinsic(oss7.str());
+
+				 std::ostringstream oss8;
+				 oss8 << "mesh1.ply";
+
+				 //Renderer a;
+
+				 a.makeTriangulation(opt, m_phase_map[0], m_phase_map[1], m_mask, calib.m_pro_int, calib.m_cam_int, calib.m_pro_ext, calib.m_pro_dist, calib.m_cam_dist,oss8.str());
+				 a.render("mesh1.ply");
+				 cvWaitKey();
+				 }
+				 catch (const std::exception& e)
 				 {
-					 m_bShowWebcam = false;
+				 fprintf(stderr,"error: %s\n", e.what());
+
 				 }
-		//m_Cap->tryCamera(0);
+				 */
 	}
+
 	private: System::Void saveCapturesToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
 				 if (m_Cap->m_vCaptures.size() != 0)
 				 {
@@ -544,20 +697,82 @@ namespace calibrate {
 					 //saveFileDialog->FilterIndex = 1;
 					 saveFileDialog->RestoreDirectory = true;
 					 if (saveFileDialog->ShowDialog() == System::Windows::Forms::DialogResult::OK)
-						 {
-							 System::String^ ruta = saveFileDialog->FileName;
-							 array<Char, 1>^ delimitador = ruta->ToCharArray();
-							 std::string ruta2;
-							 for (int i = 0; i < delimitador->Length; i++)
-								 ruta2 += delimitador[i];
-							 m_Cap->SerializeCaptures(m_Cap->m_vCaptures, ruta2);
-						 }
+					 {
+						 System::String^ ruta = saveFileDialog->FileName;
+						 array<Char, 1>^ delimitador = ruta->ToCharArray();
+						 std::string ruta2;
+						 for (int i = 0; i < delimitador->Length; i++)
+							 ruta2 += delimitador[i];
+						 m_Cap->SerializeCaptures(m_Cap->m_vCaptures, ruta2);
+					 }
 				 }
 				 else
 					 MessageBox::Show("No hay capturas que guardar, genera una serie de capturas.",
 					 "Error", MessageBoxButtons::OK,
 					 MessageBoxIcon::Error);
 	}
+
+	private: System::Void startCaptureToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
+	{
+				 captureToolStripMenuItem->Enabled = false;
+				 if (!m_bShowWebcam)
+				 {
+					 m_bShowWebcam = true;
+					 backgroundWorker1->RunWorkerAsync(10);
+				 }
+				 while (m_bStartingWorker)
+				 {
+				 }
+				 bool captura = m_Cap->CapturePatterns(500, 0, Convert::ToInt32(textBoxProyX->Text, 16), Convert::ToInt32(textBoxProyY->Text, 16), true);
+				 if (captura)
+				 {
+					 if (m_Cap->m_vCaptures.size() > 0)
+					 {
+						 Mat b;
+						 cvtColor(m_Cap->m_vCaptures[0], b, CV_GRAY2RGB);
+						 DrawCvImage(&(IplImage)b, pictureCapture);
+					 }
+					// if (checkBoxComplementary->Checked)
+						 m_decoder->m_Info->m_bComplementary = true;
+					// else
+					//	 m_decoder->m_Info->m_bComplementary = false;
+					 captura = m_decoder->Decode(25, m_Cap->m_vCaptures);
+					 if (captura)
+					 {
+						 Mat b;
+						 cvtColor(m_decoder->m_mMask[0], b, CV_GRAY2RGB);
+						 DrawCvImage(&(IplImage)b, pictureMask);
+
+						 Mat temp1 = Mat(m_decoder->m_mGray[0].rows, m_decoder->m_mGray[0].cols, CV_8UC1);
+						 m_decoder->m_mGray[0].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
+						 cvtColor(temp1, b, CV_GRAY2RGB);
+						 DrawCvImage(&(IplImage)b, pictureCorrX);
+						 m_decoder->m_mGray[1].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
+						 cvtColor(temp1, b, CV_GRAY2RGB);
+						 DrawCvImage(&(IplImage)b, pictureCorrY);
+
+					 }
+				 }
+				 captureToolStripMenuItem->Enabled = true;
+
+	}
+
+	private: System::Void testWebcamToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
+	{
+				 if (!m_bShowWebcam)
+				 {
+
+					 m_bShowWebcam = true;
+					 if (!backgroundWorker1->IsBusy)
+						 backgroundWorker1->RunWorkerAsync(10);
+				 }
+				 else
+				 {
+					 m_bShowWebcam = false;
+				 }
+				 //m_Cap->tryCamera(0);
+	}
+
 	private: System::Void backgroundWorker1_DoWork(System::Object^  sender, System::ComponentModel::DoWorkEventArgs^  e)
 	{
 				 m_bStartingWorker = true;
@@ -582,6 +797,7 @@ namespace calibrate {
 				 //cvReleaseImage(&frame);
 				 m_Cap->m_VideoCapture.release();
 	}
+
 	private: System::Void backgroundWorker1_ProgressChanged(System::Object^  sender, System::ComponentModel::ProgressChangedEventArgs^  e) {
 				 if (!camBusy&&m_bShowWebcam){
 					 camBusy = 1;
@@ -592,62 +808,214 @@ namespace calibrate {
 					 camBusy = 0;
 				 }
 	}
+
 	private: System::Void DrawCvImage(IplImage *CvImage, System::Windows::Forms::PictureBox^ pbx) {
-				// typecast IplImage to Bitmap
-				if ((pbx->Image == nullptr) || (pbx->Width != CvImage->width) || (pbx->Height != CvImage->height)){
-					pbx->Width = CvImage->width;
-					pbx->Height = CvImage->height;
-					Bitmap^ bmpPicBox = gcnew Bitmap(pbx->Width, pbx->Height);
-					pbx->Image = bmpPicBox;
-				}
+				 // typecast IplImage to Bitmap
+				 if ((pbx->Image == nullptr) || (pbx->Width != CvImage->width) || (pbx->Height != CvImage->height)){
+					 pbx->Width = CvImage->width;
+					 pbx->Height = CvImage->height;
+					 Bitmap^ bmpPicBox = gcnew Bitmap(pbx->Width, pbx->Height);
+					 pbx->Image = bmpPicBox;
+				 }
 
-				Graphics^g = Graphics::FromImage(pbx->Image);
+				 Graphics^g = Graphics::FromImage(pbx->Image);
 
-				Bitmap^ bmp = gcnew Bitmap(CvImage->width, CvImage->height, CvImage->widthStep,
-					System::Drawing::Imaging::PixelFormat::Format24bppRgb, IntPtr(CvImage->imageData));
+				 Bitmap^ bmp = gcnew Bitmap(CvImage->width, CvImage->height, CvImage->widthStep,
+					 System::Drawing::Imaging::PixelFormat::Format24bppRgb, IntPtr(CvImage->imageData));
 
-				g->DrawImage(bmp, 0, 0, CvImage->width, CvImage->height);
-				pbx->Refresh();
+				 g->DrawImage(bmp, 0, 0, CvImage->width, CvImage->height);
+				 pbx->Refresh();
 
-				delete g;
+				 delete g;
 	}
-	private: System::Void startCaptureToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
+
+	private: System::Void calibrateCameraProjectorToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
 	{
-				 if (!m_bShowWebcam)
+				 if (m_decoder->m_mGray[0].empty())
 				 {
-					 m_bShowWebcam = true;
-					 backgroundWorker1->RunWorkerAsync(10);
+					 MessageBox::Show("No hay información para calibrar. Carge capturas para continuar.",
+						 "Error", MessageBoxButtons::OK,
+						 MessageBoxIcon::Error);
+					 return;
 				 }
-				 while (m_bStartingWorker)
+
+				 Mat b = m_decoder->m_mMask[1].clone();
+				 slib::Field<2, float> m_mask;
+				 m_mask.Initialize(b.cols, m_decoder->m_mMask[1].rows);
+				 for (int i = 0; i < b.cols; i++)
+				 for (int j = 0; j < b.rows; j++)
+					 m_mask.cell(i, j) = b.at<ushort>(j, i);
+
+
+				 slib::Field<2, float> m_phase_map[2];
+				 for (int k = 0; k < 2; k++)
 				 {
+					 Mat a = m_decoder->m_mGray[k].clone();
+					 m_phase_map[k].Initialize(a.cols, a.rows);
+					 for (int i = 0; i < a.cols; i++)
+					 for (int j = 0; j < a.rows; j++)
+						 m_phase_map[k].cell(i, j) = a.at<ushort>(j, i);
 				 }
-				 printf("hola");
-				 bool captura = m_Cap->CapturePatterns(500, 0);
-				 if (captura)
-				 {
-					 if (m_Cap->m_vCaptures.size()>0)
-					 {
-						 Mat b;
-						 cvtColor(m_Cap->m_vCaptures[0], b, CV_GRAY2RGB);
-						 DrawCvImage(&(IplImage)b, pictureCapture);
-					 }
-					 captura = m_decoder->Decode(25, m_Cap->m_vCaptures);
-					 if (captura)
-					 {
-						 Mat b;
-						 cvtColor(m_decoder->m_mMask[0], b, CV_GRAY2RGB);
-						 DrawCvImage(&(IplImage)b, pictureMask);
-						 
-						 Mat temp1 = Mat(m_decoder->m_mGray[0].rows, m_decoder->m_mGray[0].cols, CV_8UC1);
-						 m_decoder->m_mGray[0].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
-						 cvtColor(temp1, b, CV_GRAY2RGB);
-						 DrawCvImage(&(IplImage)b, pictureCorrX);
-						 m_decoder->m_mGray[1].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
-						 cvtColor(temp1, b, CV_GRAY2RGB);
-						 DrawCvImage(&(IplImage)b, pictureCorrY);
-					 }
-				 }
-				 
+				 m_calib->Calibrate(m_phase_map[0], m_phase_map[1], m_mask);
+				 *m_cam_int = m_calib->m_cam_int;
+				 m_cam_dist = m_calib->m_cam_dist;
+				 *m_proj_int = m_calib->m_pro_int;
+				 m_proj_dist = m_calib->m_pro_dist;
+				 *m_proj_ext = m_calib->m_pro_ext;
+				 m_bMatrixReady = true;
 	}
-};
+	private: System::Void saveCalibrationMatrixToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
+	{
+				 SaveFileDialog^ saveFileDialog = gcnew SaveFileDialog;
+				 saveFileDialog->InitialDirectory = "$(ProjectDir)";
+				 saveFileDialog->Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
+				 //saveFileDialog->FilterIndex = 1;
+				 saveFileDialog->RestoreDirectory = true;
+				 if (saveFileDialog->ShowDialog() == System::Windows::Forms::DialogResult::OK)
+				 {
+					 System::String^ filename = saveFileDialog->FileName;
+					 System::IO::StreamWriter^ file = gcnew System::IO::StreamWriter(filename);
+					 file->WriteLine("MatJPV");
+					 //Write camera-int
+					 int sizeX = m_cam_int->GetNumCols();
+					 int sizeY = m_cam_int->GetNumRows();
+					 for (int i = 0; i < sizeX; i++)
+					 for (int j = 0; j < sizeY; j++)
+					 {
+						 file->Write((*m_cam_int)(i, j).ToString());
+						 file->Write(" ");
+					 }
+					 file->Write("\n");
+					 //Write camera-dist
+					 file->Write(m_cam_dist.ToString());
+					 file->Write("\n");
+
+					 //Write proj-int
+					 sizeX = m_proj_int->GetNumCols();
+					 sizeY = m_proj_int->GetNumRows();
+					 for (int i = 0; i < sizeX; i++)
+					 for (int j = 0; j < sizeY; j++)
+					 {
+						 file->Write((*m_proj_int)(i, j).ToString());
+						 file->Write(" ");
+					 }
+					 file->Write("\n");
+					 //Write proj-dist
+					 file->Write(m_proj_dist.ToString());
+					 file->Write("\n");
+
+					 //Write proj-ext
+					 sizeX = m_proj_ext->GetNumCols();
+					 sizeY = m_proj_ext->GetNumRows();
+					 for (int i = 0; i < sizeX; i++)
+					 for (int j = 0; j < sizeY; j++)
+					 {
+						 file->Write((*m_proj_ext)(i, j).ToString());
+						 file->Write(" ");
+					 }
+					 file->Close();
+				 }
+	}
+	private: System::Void loadCalibrationMatricesToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
+	{
+				 OpenFileDialog^ openFileDialog1 = gcnew OpenFileDialog;
+
+				 openFileDialog1->InitialDirectory = "$(ProjectDir)";
+				 openFileDialog1->Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
+				 openFileDialog1->FilterIndex = 1;
+				 openFileDialog1->RestoreDirectory = true;
+				 if (openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
+				 {
+					 System::IO::StreamReader^ streamReader = gcnew System::IO::StreamReader(openFileDialog1->FileName);
+					 System::String^ output = streamReader->ReadLine();
+					 if (output != "MatJPV")
+					 {
+						 MessageBox::Show("El archivo seleccionado no es un archivo de matrices valido.",
+							 "Error", MessageBoxButtons::OK,
+							 MessageBoxIcon::Error);
+						 streamReader->Close();
+						 return;
+					 }
+					 //Camera intrinsics
+					 output = streamReader->ReadLine();
+					 array<System::String^>^ camera_int = output->Split(' ');
+
+					 slib::CMatrix<3, 3, double> cam_int = slib::make_matrix<double>(
+						 Convert::ToDouble(camera_int[0]), Convert::ToDouble(camera_int[1]), Convert::ToDouble(camera_int[2]),
+						 Convert::ToDouble(camera_int[3]), Convert::ToDouble(camera_int[4]), Convert::ToDouble(camera_int[5]),
+						 Convert::ToDouble(camera_int[6]), Convert::ToDouble(camera_int[7]), 1);
+
+					 //Camera dist
+					 output = streamReader->ReadLine();
+					 m_cam_dist = Convert::ToDouble(output);
+
+					 //Projector intrinsics
+					 output = streamReader->ReadLine();
+					 camera_int = output->Split(' ');
+
+					 slib::CMatrix<3, 3, double> proj_int = slib::make_matrix<double>(
+						 Convert::ToDouble(camera_int[0]), Convert::ToDouble(camera_int[1]), Convert::ToDouble(camera_int[2]),
+						 Convert::ToDouble(camera_int[3]), Convert::ToDouble(camera_int[4]), Convert::ToDouble(camera_int[5]),
+						 Convert::ToDouble(camera_int[6]), Convert::ToDouble(camera_int[7]), 1);
+
+					 //Projector dist
+					 output = streamReader->ReadLine();
+					 m_proj_dist = Convert::ToDouble(output);
+
+					 //Proj extrinsics
+					 output = streamReader->ReadLine();
+					 camera_int = output->Split(' ');
+
+					 slib::CMatrix<3, 4, double> proj_ext;
+					 proj_ext(0, 0) = Convert::ToDouble(camera_int[0]);
+					 proj_ext(0, 1) = Convert::ToDouble(camera_int[1]);
+					 proj_ext(0, 2) = Convert::ToDouble(camera_int[2]);
+					 proj_ext(0, 3) = Convert::ToDouble(camera_int[3]);
+					 proj_ext(1, 0) = Convert::ToDouble(camera_int[4]);
+					 proj_ext(1, 1) = Convert::ToDouble(camera_int[5]);
+					 proj_ext(1, 2) = Convert::ToDouble(camera_int[6]);
+					 proj_ext(1, 3) = Convert::ToDouble(camera_int[7]);
+					 proj_ext(2, 0) = Convert::ToDouble(camera_int[8]);
+					 proj_ext(2, 1) = Convert::ToDouble(camera_int[9]);
+					 proj_ext(2, 2) = Convert::ToDouble(camera_int[10]);
+					 proj_ext(2, 3) = Convert::ToDouble(camera_int[11]);
+
+					 *m_cam_int = cam_int;
+					 *m_proj_int = proj_int;
+					 *m_proj_ext = proj_ext;
+					 streamReader->Close();
+					 m_bMatrixReady = true;
+				 }
+	}
+	private: System::Void triangulateToolStripMenuItem1_Click(System::Object^  sender, System::EventArgs^  e)
+	{
+				 if (!m_bMatrixReady || m_decoder->m_mGray[0].empty())
+				 {
+					 MessageBox::Show("No hay matrices o mapas de correspondencia para hacer la triangulacion.",
+						 "Error", MessageBoxButtons::OK,
+						 MessageBoxIcon::Error);
+					 return;
+				 }
+				 Mat b = m_decoder->m_mMask[1].clone();
+				 slib::Field<2, float> m_mask;
+				 m_mask.Initialize(b.cols, m_decoder->m_mMask[1].rows);
+				 for (int i = 0; i < b.cols; i++)
+				 for (int j = 0; j < b.rows; j++)
+					 m_mask.cell(i, j) = b.at<ushort>(j, i);
+
+
+				 slib::Field<2, float> m_phase_map[2];
+				 for (int k = 0; k < 2; k++)
+				 {
+					 Mat a = m_decoder->m_mGray[k].clone();
+					 m_phase_map[k].Initialize(a.cols, a.rows);
+					 for (int i = 0; i < a.cols; i++)
+					 for (int j = 0; j < a.rows; j++)
+						 m_phase_map[k].cell(i, j) = a.at<ushort>(j, i);
+				 }
+
+				 m_renderer->makeTriangulation(*m_opt, m_phase_map[0], m_phase_map[1], m_mask, *m_proj_int, *m_cam_int, *m_proj_ext, m_proj_dist, m_cam_dist, "meshTemp.ply");
+				 m_renderer->render("meshTemp.ply");
+	}
+	};
 }

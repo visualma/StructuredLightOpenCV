@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <GL/glut.h>
-
+//#include <GL\freeglut.h>
 #include "MathBaseLapack.h"
 #include "MiscUtil.h"
 #include "Stereo.h"
@@ -354,7 +354,7 @@ public:
 		myargv[0] = strdup("calibrate");
 		glutInit(&myargc, myargv);
 
-		glutCreateWindow("Assimp - Very simple OpenGL sample");
+		glutCreateWindow("Structured Light point cloud viewer.");
 		setupDrawCallback();
 		glutReshapeFunc(&Renderer::reshape);
 		setupMouseFunction();
@@ -391,7 +391,6 @@ public:
 		// XXX docs say all polygons are emitted CCW, but tests show that some aren't.
 		if (getenv("MODEL_IS_BROKEN"))
 			glFrontFace(GL_CW);
-
 		glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
 
 		glutGet(GLUT_ELAPSED_TIME);
@@ -401,7 +400,6 @@ public:
 		// keeps internal resources until the scene is freed again. Not 
 		// doing so can cause severe resource leaking.
 		aiReleaseImport(scene);
-
 		// We added a log stream to the library, it's our job to disable it
 		// again. This will definitely release the last resources allocated
 		// by Assimp.

@@ -35,7 +35,6 @@ public:
 
 class CDecoder
 {
-	COptions* m_Info;
 	vector<Mat> m_vCaptures;
 	vector<Mat> m_vGrayError[2];
 	vector<Mat> m_vGrayMap;
@@ -51,6 +50,7 @@ class CDecoder
     Matx34d m_mCameraProjection;
     Mat_<double> k_cam,k_proj;
 public:
+	COptions* m_Info;
 	Mat m_mGray[2];
 	Mat m_mMask[2];
 	CDecoder(COptions* Options);

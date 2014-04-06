@@ -29,7 +29,7 @@ public:
 	vector <Mat> m_vPatterns;
 	COptions* m_Options;
 	VideoCapture m_VideoCapture;
-	bool CapturePatterns(int time,int device);
+	bool CapturePatterns(int time, int device, int posX, int posY, bool useComp);
 	bool CapturePatternsUndisorted(Mat& CameraMatrix, Mat& DistVect,int time);
 	static bool SerializeCaptures(vector<Mat> imagenes, string str);
 	static string SerializeCapturesDefault(vector<Mat> imagenes, string str);
