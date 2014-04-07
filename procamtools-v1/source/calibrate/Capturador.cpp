@@ -61,7 +61,7 @@ bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool use
 	//	return -1;
 	bool bMakeCapture = false;
 	int nPatterns = 0;
-	namedWindow("Camera", 1);
+	//namedWindow("Camera", 1);
 	namedWindow("Patrones");
 
 	HWND win_handle = FindWindow(0, "Patrones");
@@ -96,6 +96,7 @@ bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool use
 		int C = B - A;
 		if (C>time || waitKey(30) >= 0)
 		{
+			if (!frame.empty())
 			if (useComp)
 			{
 				i++;
@@ -108,7 +109,7 @@ bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool use
 			}
 			else
 			{
-				i+=2;
+				i += 2;
 				Mat capture = frame.clone();
 				Mat gray;
 				cv::cvtColor(capture, gray, CV_BGR2GRAY);
@@ -117,6 +118,8 @@ bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool use
 				if (nPatterns >= m_nPatterns)
 					break;
 			}
+			else
+				printf("Error: no caputre info.\n");
 			A = GetTickCount();
 		};
 	}
@@ -299,7 +302,8 @@ bool CCapturador::tryCamera(int device)
 	while (key==-1||key==0)
 	{
 		m_VideoCapture >> frame;
-		imshow("Camara", frame);
+		if (!frame.empty())
+			imshow("Camara", frame);
 		key = cvWaitKey(30);
 	}
 	cvvDestroyWindow("Camara");

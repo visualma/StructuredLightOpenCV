@@ -40,14 +40,15 @@ namespace calibrate {
 		IplImage* frame;
 		CProCamCalibrate* m_calib;
 		bool m_bShowWebcam;
-		bool m_bStartingWorker;
+		volatile bool m_bStartingWorker;
 		bool m_bMatrixReady = false;
+		bool m_bCapturating = false;
 		int camBusy = 0;
 		int camDevice = 0;
 		slib::CMatrix<3, 3, double>* m_cam_int, *m_proj_int;
 		slib::CMatrix<3, 4, double> *m_proj_ext;
 		double m_cam_dist, m_proj_dist;
-
+		Mat* m_frame;
 
 	private: System::Windows::Forms::ToolStripMenuItem^  startCaptureToolStripMenuItem;
 	private: System::Windows::Forms::TabControl^  tabControl1;
@@ -78,6 +79,8 @@ namespace calibrate {
 	private: System::Windows::Forms::ToolStripMenuItem^  saveCalibrationMatrixToolStripMenuItem;
 	private: System::Windows::Forms::ToolStripMenuItem^  triangulateToolStripMenuItem1;
 	private: System::Windows::Forms::ToolStripMenuItem^  exportAsOBJToolStripMenuItem;
+	private: System::Windows::Forms::ProgressBar^  progressBar1;
+	private: System::Windows::Forms::Label^  labelProggres;
 
 
 
@@ -139,6 +142,8 @@ namespace calibrate {
 			this->loadCalibrationMatricesToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->saveCalibrationMatrixToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->triangulateToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->triangulateToolStripMenuItem1 = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->exportAsOBJToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->captureToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->loadCapturesToolStripMenuItem1 = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->saveCapturesToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
@@ -158,6 +163,7 @@ namespace calibrate {
 			this->pictureCorrY = (gcnew System::Windows::Forms::PictureBox());
 			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
 			this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
+			this->progressBar1 = (gcnew System::Windows::Forms::ProgressBar());
 			this->checkBoxComplementary = (gcnew System::Windows::Forms::CheckBox());
 			this->label3 = (gcnew System::Windows::Forms::Label());
 			this->label2 = (gcnew System::Windows::Forms::Label());
@@ -165,8 +171,7 @@ namespace calibrate {
 			this->textBoxProyX = (gcnew System::Windows::Forms::TextBox());
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->label4 = (gcnew System::Windows::Forms::Label());
-			this->triangulateToolStripMenuItem1 = (gcnew System::Windows::Forms::ToolStripMenuItem());
-			this->exportAsOBJToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->labelProggres = (gcnew System::Windows::Forms::Label());
 			this->menuStrip1->SuspendLayout();
 			this->tabControl1->SuspendLayout();
 			this->tabPage1->SuspendLayout();
@@ -248,6 +253,19 @@ namespace calibrate {
 			this->triangulateToolStripMenuItem->Size = System::Drawing::Size(79, 20);
 			this->triangulateToolStripMenuItem->Text = L"&Triangulate";
 			// 
+			// triangulateToolStripMenuItem1
+			// 
+			this->triangulateToolStripMenuItem1->Name = L"triangulateToolStripMenuItem1";
+			this->triangulateToolStripMenuItem1->Size = System::Drawing::Size(144, 22);
+			this->triangulateToolStripMenuItem1->Text = L"&Triangulate";
+			this->triangulateToolStripMenuItem1->Click += gcnew System::EventHandler(this, &MyForm::triangulateToolStripMenuItem1_Click);
+			// 
+			// exportAsOBJToolStripMenuItem
+			// 
+			this->exportAsOBJToolStripMenuItem->Name = L"exportAsOBJToolStripMenuItem";
+			this->exportAsOBJToolStripMenuItem->Size = System::Drawing::Size(144, 22);
+			this->exportAsOBJToolStripMenuItem->Text = L"&Export as OBJ";
+			// 
 			// captureToolStripMenuItem
 			// 
 			this->captureToolStripMenuItem->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(4) {
@@ -261,28 +279,28 @@ namespace calibrate {
 			// loadCapturesToolStripMenuItem1
 			// 
 			this->loadCapturesToolStripMenuItem1->Name = L"loadCapturesToolStripMenuItem1";
-			this->loadCapturesToolStripMenuItem1->Size = System::Drawing::Size(152, 22);
+			this->loadCapturesToolStripMenuItem1->Size = System::Drawing::Size(150, 22);
 			this->loadCapturesToolStripMenuItem1->Text = L"Load Captures";
 			this->loadCapturesToolStripMenuItem1->Click += gcnew System::EventHandler(this, &MyForm::loadCapturesToolStripMenuItem1_Click);
 			// 
 			// saveCapturesToolStripMenuItem
 			// 
 			this->saveCapturesToolStripMenuItem->Name = L"saveCapturesToolStripMenuItem";
-			this->saveCapturesToolStripMenuItem->Size = System::Drawing::Size(152, 22);
+			this->saveCapturesToolStripMenuItem->Size = System::Drawing::Size(150, 22);
 			this->saveCapturesToolStripMenuItem->Text = L"Save Captures";
 			this->saveCapturesToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::saveCapturesToolStripMenuItem_Click);
 			// 
 			// testWebcamToolStripMenuItem
 			// 
 			this->testWebcamToolStripMenuItem->Name = L"testWebcamToolStripMenuItem";
-			this->testWebcamToolStripMenuItem->Size = System::Drawing::Size(152, 22);
+			this->testWebcamToolStripMenuItem->Size = System::Drawing::Size(150, 22);
 			this->testWebcamToolStripMenuItem->Text = L"Test Webcam";
 			this->testWebcamToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::testWebcamToolStripMenuItem_Click);
 			// 
 			// startCaptureToolStripMenuItem
 			// 
 			this->startCaptureToolStripMenuItem->Name = L"startCaptureToolStripMenuItem";
-			this->startCaptureToolStripMenuItem->Size = System::Drawing::Size(152, 22);
+			this->startCaptureToolStripMenuItem->Size = System::Drawing::Size(150, 22);
 			this->startCaptureToolStripMenuItem->Text = L"Start Capture";
 			this->startCaptureToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::startCaptureToolStripMenuItem_Click);
 			// 
@@ -417,9 +435,18 @@ namespace calibrate {
 			this->groupBox1->TabIndex = 2;
 			this->groupBox1->TabStop = false;
 			// 
+			// progressBar1
+			// 
+			this->progressBar1->Location = System::Drawing::Point(12, 550);
+			this->progressBar1->Name = L"progressBar1";
+			this->progressBar1->Size = System::Drawing::Size(162, 22);
+			this->progressBar1->TabIndex = 6;
+			// 
 			// checkBoxComplementary
 			// 
 			this->checkBoxComplementary->AutoSize = true;
+			this->checkBoxComplementary->Checked = true;
+			this->checkBoxComplementary->CheckState = System::Windows::Forms::CheckState::Checked;
 			this->checkBoxComplementary->Location = System::Drawing::Point(11, 77);
 			this->checkBoxComplementary->Name = L"checkBoxComplementary";
 			this->checkBoxComplementary->Size = System::Drawing::Size(162, 17);
@@ -481,18 +508,13 @@ namespace calibrate {
 			this->label4->TabIndex = 3;
 			this->label4->Text = L"Settings";
 			// 
-			// triangulateToolStripMenuItem1
+			// labelProggres
 			// 
-			this->triangulateToolStripMenuItem1->Name = L"triangulateToolStripMenuItem1";
-			this->triangulateToolStripMenuItem1->Size = System::Drawing::Size(152, 22);
-			this->triangulateToolStripMenuItem1->Text = L"&Triangulate";
-			this->triangulateToolStripMenuItem1->Click += gcnew System::EventHandler(this, &MyForm::triangulateToolStripMenuItem1_Click);
-			// 
-			// exportAsOBJToolStripMenuItem
-			// 
-			this->exportAsOBJToolStripMenuItem->Name = L"exportAsOBJToolStripMenuItem";
-			this->exportAsOBJToolStripMenuItem->Size = System::Drawing::Size(152, 22);
-			this->exportAsOBJToolStripMenuItem->Text = L"&Export as OBJ";
+			this->labelProggres->AutoSize = true;
+			this->labelProggres->Location = System::Drawing::Point(183, 553);
+			this->labelProggres->Name = L"labelProggres";
+			this->labelProggres->Size = System::Drawing::Size(0, 13);
+			this->labelProggres->TabIndex = 7;
 			// 
 			// MyForm
 			// 
@@ -500,6 +522,8 @@ namespace calibrate {
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::Color::Snow;
 			this->ClientSize = System::Drawing::Size(855, 587);
+			this->Controls->Add(this->labelProggres);
+			this->Controls->Add(this->progressBar1);
 			this->Controls->Add(this->label4);
 			this->Controls->Add(this->groupBox1);
 			this->Controls->Add(this->tabControl1);
@@ -507,6 +531,7 @@ namespace calibrate {
 			this->MainMenuStrip = this->menuStrip1;
 			this->Name = L"MyForm";
 			this->Text = L"Structured Light Mapper";
+			this->FormClosing += gcnew System::Windows::Forms::FormClosingEventHandler(this, &MyForm::MyForm_FormClosing);
 			this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
 			this->menuStrip1->ResumeLayout(false);
 			this->menuStrip1->PerformLayout();
@@ -543,6 +568,7 @@ namespace calibrate {
 				 m_cam_int = new slib::CMatrix<3, 3, double>;
 				 m_proj_int = new slib::CMatrix<3, 3, double>;
 				 m_proj_ext = new slib::CMatrix<3, 4, double>;
+				 m_frame = new Mat();
 	}
 	private: System::Void loadCapturesToolStripMenuItem1_Click(System::Object^  sender, System::EventArgs^  e)
 	{
@@ -723,7 +749,9 @@ namespace calibrate {
 				 while (m_bStartingWorker)
 				 {
 				 }
+				 m_bCapturating = true;
 				 bool captura = m_Cap->CapturePatterns(500, 0, Convert::ToInt32(textBoxProyX->Text, 16), Convert::ToInt32(textBoxProyY->Text, 16), true);
+				 m_bCapturating = false;
 				 if (captura)
 				 {
 					 if (m_Cap->m_vCaptures.size() > 0)
@@ -788,25 +816,55 @@ namespace calibrate {
 						 break;
 					 }
 					 if (camBusy) continue;
-					 m_Cap->m_VideoCapture >> mFrame;
-					 if (mFrame.empty()) continue;
-					 frame = cvCloneImage(&(IplImage)mFrame);
-					 worker->ReportProgress(1);
+					 try
+					 {
+						 m_Cap->m_VideoCapture >> mFrame;
+						 if (mFrame.empty()) continue;
+						 m_frame = &mFrame;
+						 //frame = cvCloneImage(&(IplImage)mFrame);
+						 worker->ReportProgress(1);
+						 //mFrame.release();
+					 }
+					 catch (std::exception e)
+					 {
+						 printf("Error: %s", e.what());
+					 }
 				 }
 				 mFrame.release();
-				 //cvReleaseImage(&frame);
+
+				 //pin_ptr<IplImage*> p;
+				 //p = &frame;
+				 //cvReleaseImage(p);
 				 m_Cap->m_VideoCapture.release();
 	}
 
 	private: System::Void backgroundWorker1_ProgressChanged(System::Object^  sender, System::ComponentModel::ProgressChangedEventArgs^  e) {
 				 if (!camBusy&&m_bShowWebcam){
 					 camBusy = 1;
-					 IplImage *destination = cvCreateImage(cvSize(640, 480), frame->depth, frame->nChannels);
-					 cvResize(frame, destination);
-					 DrawCvImage(destination, pictureCamera);
-					 cvReleaseImage(&destination);
+					 //IplImage *destination = cvCreateImage(cvSize(640, 480), m_frame->depth(), m_frame->channels());
+					 //cvResize(frame, destination);
+					 if (m_frame->cols>0 && m_frame->rows>0)
+						DrawCvImage(&(IplImage)(*m_frame), pictureCamera);
+					 //if (m_frame->cols>0&&m_frame->rows>0)
+					 //imshow("camara", *m_frame);
+					 m_frame->release();
+					 //cvReleaseImage(&destination);
+					 /*pin_ptr<IplImage*> p;
+					 p = &frame;
+					 cvReleaseImage(p);*/
 					 camBusy = 0;
 				 }
+				 if (m_bCapturating)
+				 {
+					 progressBar1->Value = 100 * (float)((float)m_Cap->m_vCaptures.size() / (float)m_Cap->m_Options->m_nNumPatterns);
+					 labelProggres->Text = m_Cap->m_vCaptures.size().ToString() + "/" + m_Cap->m_Options->m_nNumPatterns;
+				 }
+				 else
+				 {
+					 progressBar1->Value = 0;
+					 labelProggres->Text = " ";
+				 }
+
 	}
 
 	private: System::Void DrawCvImage(IplImage *CvImage, System::Windows::Forms::PictureBox^ pbx) {
@@ -907,10 +965,10 @@ namespace calibrate {
 					 //Write proj-ext
 					 sizeX = m_proj_ext->GetNumCols();
 					 sizeY = m_proj_ext->GetNumRows();
-					 for (int i = 0; i < sizeX; i++)
-					 for (int j = 0; j < sizeY; j++)
+					 for (int r = 0; r < sizeY; r++)
+					 for (int c = 0; c < sizeX; c++)
 					 {
-						 file->Write((*m_proj_ext)(i, j).ToString());
+						 file->Write((*m_proj_ext)(r, c).ToString());
 						 file->Write(" ");
 					 }
 					 file->Close();
@@ -964,21 +1022,15 @@ namespace calibrate {
 
 					 //Proj extrinsics
 					 output = streamReader->ReadLine();
-					 camera_int = output->Split(' ');
+					 array<System::String^>^ camera_ext = output->Split(' ');
 
 					 slib::CMatrix<3, 4, double> proj_ext;
-					 proj_ext(0, 0) = Convert::ToDouble(camera_int[0]);
-					 proj_ext(0, 1) = Convert::ToDouble(camera_int[1]);
-					 proj_ext(0, 2) = Convert::ToDouble(camera_int[2]);
-					 proj_ext(0, 3) = Convert::ToDouble(camera_int[3]);
-					 proj_ext(1, 0) = Convert::ToDouble(camera_int[4]);
-					 proj_ext(1, 1) = Convert::ToDouble(camera_int[5]);
-					 proj_ext(1, 2) = Convert::ToDouble(camera_int[6]);
-					 proj_ext(1, 3) = Convert::ToDouble(camera_int[7]);
-					 proj_ext(2, 0) = Convert::ToDouble(camera_int[8]);
-					 proj_ext(2, 1) = Convert::ToDouble(camera_int[9]);
-					 proj_ext(2, 2) = Convert::ToDouble(camera_int[10]);
-					 proj_ext(2, 3) = Convert::ToDouble(camera_int[11]);
+					 int sizeX = 3;
+					 int sizeY = 4;
+					 for (int c = 0; c < sizeY; c++)
+					 for (int r = 0; r < sizeX; r++)
+						 proj_ext(r, c) = Convert::ToDouble(camera_ext[r*sizeY+c]);
+
 
 					 *m_cam_int = cam_int;
 					 *m_proj_int = proj_int;
@@ -1017,5 +1069,9 @@ namespace calibrate {
 				 m_renderer->makeTriangulation(*m_opt, m_phase_map[0], m_phase_map[1], m_mask, *m_proj_int, *m_cam_int, *m_proj_ext, m_proj_dist, m_cam_dist, "meshTemp.ply");
 				 m_renderer->render("meshTemp.ply");
 	}
-	};
+	private: System::Void MyForm_FormClosing(System::Object^  sender, System::Windows::Forms::FormClosingEventArgs^  e) {
+				 if (m_Cap->m_VideoCapture.isOpened())
+					 m_Cap->m_VideoCapture.release();
+	}
+};
 }

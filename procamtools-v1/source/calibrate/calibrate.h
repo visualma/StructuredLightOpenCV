@@ -103,12 +103,17 @@ private:
 		slib::CVector<3,double> vecT;
 		EstimateRelativePoseByEssentialMatrix(essential, rotation, vecT);
 
+		printf("\n\n");
 		// generate projection matrices
 		for (int r=0; r<3; r++) 
 		{
-			for (int c=0; c<3; c++) 
-				m_pro_ext(r,c)=rotation(r,c);
+			for (int c = 0; c < 3; c++)
+			{
+				m_pro_ext(r, c) = rotation(r, c);
+				printf(" %g ", m_pro_ext(r, c));
+			}
 			m_pro_ext(r,3)=vecT[r];
+			printf(" %g\n", m_pro_ext(r, 3));
 		}
 	}
 
