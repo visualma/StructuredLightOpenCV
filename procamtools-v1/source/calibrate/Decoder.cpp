@@ -84,6 +84,13 @@ bool CDecoder::Decode(float thres, vector<Mat>& vCaptures)
 				m_mMask[0].at<ushort>(x, y) = 0;
 			m_mPhaseError[0].at<float>(x, y) = std::min(m_mPhaseError[0].at<float>(x, y), m_mPhaseError[1].at<float>(x, y));
 		}
+		for (int y = 0; y < m_mMask[1].cols; y++)
+		for (int x = 0; x < m_mMask[1].rows; x++)
+			if (!m_mMask[0].at<ushort>(x, y))
+			{
+				m_mGray[0].at<ushort>(x, y) = 0;
+				m_mGray[1].at<ushort>(x, y) = 0;
+			}
 	}
 	//m_mGray[0] = MaskMat(m_mGray[0], m_mMask[0],false);
 	//m_mGray[1] = MaskMat(m_mGray[1], m_mMask[0],false);

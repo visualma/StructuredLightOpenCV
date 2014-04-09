@@ -27,6 +27,7 @@ public:
 	int m_nPatterns, m_nFramesPerPattern;
 	vector <Mat> m_vCaptures;
 	vector <Mat> m_vPatterns;
+	Mat m_mTextura;
 	COptions* m_Options;
 	VideoCapture m_VideoCapture;
 	bool CapturePatterns(int time, int device, int posX, int posY, bool useComp);

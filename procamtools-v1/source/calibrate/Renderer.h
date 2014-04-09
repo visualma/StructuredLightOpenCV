@@ -1,6 +1,7 @@
 #pragma once
 #pragma comment(lib,"assimp.lib")
 #include <assimp/cimport.h>
+#include <assimp/cexport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <stdlib.h>
@@ -43,6 +44,9 @@ public:
 	aiVector3D scene_min, scene_max, scene_center;
 	// current rotation angle
 	float angle;
+	vector<CVector<3, double>> vertex_normals, vertices;
+	vector<CVector<3, int>> face;
+
 	static void reshape(int width, int height)
 	{
 		const double aspectRatio = (float)width / height, fieldOfView = 45.0;
@@ -394,8 +398,11 @@ public:
 		glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
 
 		glutGet(GLUT_ELAPSED_TIME);
+		const aiExportFormatDesc* a;
+		for (int i = 0; i < aiGetExportFormatCount();i++)
+			 a = aiGetExportFormatDescription(i);
+		aiExportScene(scene, aiGetExportFormatDescription(1)->id, "hola.obj", 0);
 		glutMainLoop();
-
 		// cleanup - calling 'aiReleaseImport' is important, as the library 
 		// keeps internal resources until the scene is freed again. Not 
 		// doing so can cause severe resource leaking.
@@ -453,7 +460,6 @@ public:
 		else
 			index.cell(x, y) = -1;
 
-		std::vector<CVector<3, int>> face;
 		for (int y = 0; y<mask.size(1) - 1; y++)
 		{
 			for (int x = 0; x<mask.size(0) - 1; x++)
@@ -494,47 +500,41 @@ public:
 		fclose(fw);
 	}
 
+	void WriteObj(std::string path,std::string filename)
+	{
+		TRACE("obj => %s\n", filename.c_str());
+		FILE *fl = fopen(path.c_str(), "w");
+		fprintf(fl, "g %s\n",filename.c_str());
+		for (int i = 0; i<vertices.size(); i++)
+		{
+			fprintf(fl, "v %g %g %g\n", vertices[i][0], vertices[i][1], vertices[i][2]);
+		}
+		for (int i = 0; i < vertex_normals.size(); i++)
+		{
+			fprintf(fl, "vn %g %g %g\n", vertex_normals[i][0], vertex_normals[i][1], vertex_normals[i][2]);
+		}
+		for (int i = 0; i < face.size(); i++)
+		{
+			fprintf(fl, "f %d", face[i][0] + 1);
+			fprintf(fl, " %d", face[i][1] + 1);
+			fprintf(fl, " %d\n", face[i][2] + 1);
+		}
+		fclose(fl);
+	}
 	// print usage and exit
 
 	// entry point
 	int makeTriangulation(options_t options, Field<2, float> horizontal, Field<2, float> vertical, Field<2, float> mask, CMatrix<3, 3,
 		double> matKpro, CMatrix<3, 3, double>  matKcam,
-		CMatrix<3, 4, double> proRt, double xi1, double xi2, std::string meshName)
+		CMatrix<3, 4, double> proRt, double xi1, double xi2)
 	{
-		m_plyfilename = meshName;
+		std::vector<CVector<3, double>> result;
 		//printf("Angulo de distorcion: %f, se guadara en %s", m_distortion_angle, m_plyfilename);
 		try
 		{
-			/*
-			// parse commandline options
-			int argi = set_options(argc, argv);
-
-			// horizontal and vertical correspondences between projector and camera
-			Field<2,float> horizontal, vertical, mask;
-			horizontal.Read(argv[argi++]);
-			if (m_vmapfilename)
-			vertical.Read(m_vmapfilename);
-			image::Read(mask, argv[argi++]);
-			options.load(argv[argi++]);
-			*/
 			CVector<2, double>
 				cod1 = make_vector<double>((options.projector_width + 1) / 2.0, options.projector_height*options.projector_horizontal_center),
 				cod2 = (make_vector(1.0, 1.0) + mask.size()) / 2;
-
-			// intrinsic matrices of projector and camera
-			//CMatrix<3,3,double> matKpro, matKcam;
-			//double xi1,xi2;
-			//FILE*fr;
-			//matKcam.Read(argv[argi++]);
-			//fr=fopen(argv[argi++],"rb");
-			//if (!fr) throw std::runtime_error("failed to open camera distortion");
-			//fscanf(fr,"%lf",&xi2);
-			//fclose(fr);
-			//matKpro.Read(argv[argi++]);
-			//fr=fopen(argv[argi++],"rb");
-			//if (!fr) throw std::runtime_error("failed to open projector distortion");
-			//fscanf(fr,"%lf",&xi1);
-			//fclose(fr);
 
 			// extrinsic matrices of projector and camera
 			CMatrix<3, 4, double> camRt;
@@ -554,7 +554,6 @@ public:
 			CMatrix<3, 3, double> matF = transpose_of(inverse_of(matKpro)) * GetSkewSymmetric(vecT) * matR * inverse_of(matKcam);
 
 			// triangulate 3d points
-			std::vector<CVector<3, double>> result;
 			for (int y = 0; y<horizontal.size(1); y++)
 			{
 				if (y % (horizontal.size(1) / 100) == 0)
@@ -599,14 +598,157 @@ public:
 			}
 			printf("\n");
 			// export triangular mesh in PLY format
-			WritePly(result, mask, m_plyfilename);
 		}
 		catch (const std::exception& e)
 		{
 			TRACE("error: %s\n", e.what());
 			return -1;
 		}
+
+
+		Field<2, int> index(mask.size());
+		for (int y = 0, idx = 0; y<mask.size(1); y++)
+		for (int x = 0; x<mask.size(0); x++)
+		if (mask.cell(x, y))
+			index.cell(x, y) = idx++;
+		else
+			index.cell(x, y) = -1;
+
+		for (int y = 0; y<mask.size(1) - 1; y++)
+		{
+			for (int x = 0; x<mask.size(0) - 1; x++)
+			{
+				// sore in CCW order
+				if (mask.cell(x, y) && mask.cell(x + 1, y) && mask.cell(x + 1, y + 1) &&
+					!distorted(index.cell(x, y), index.cell(x + 1, y), index.cell(x + 1, y + 1), result))
+					face.push_back(make_vector(index.cell(x, y), index.cell(x + 1, y + 1), index.cell(x + 1, y)));
+				if (mask.cell(x, y) && mask.cell(x + 1, y + 1) && mask.cell(x, y + 1) &&
+					!distorted(index.cell(x, y), index.cell(x + 1, y + 1), index.cell(x, y + 1), result))
+					face.push_back(make_vector(index.cell(x, y), index.cell(x, y + 1), index.cell(x + 1, y + 1)));
+			}
+		}
+
+		vertex_normals = GenerateVertexNormalsFromVertices(face, result);
+		vertices = result;
 		return 0;
 	}
 
+	vector<CVector<3, double>> GenerateVertexNormalsFromVertices(vector<CVector<3, int>> triangles, vector<CVector<3, double>> vertices)
+
+	{
+		vector<CVector<3, double>> face_normals(triangles.size()), vertex_normals(vertices.size());
+		try
+		{
+			//face_normals.reserve(triangles.size());
+			//face_normals.resize(triangles.size());
+		}
+		catch (bad_alloc)
+		{
+			throw runtime_error("Memory allocation failure.");
+		}
+
+		for (size_t i = 0; i < triangles.size(); i++)
+		{
+			CVector<3, float> v[3];
+
+			// for each vertex in the triangle
+			for (unsigned char j = 0; j < 3; j++)
+			{
+				// else, extract position data
+				v[j][0] = vertices[triangles[i][j]+1][0];
+				v[j][1] = vertices[triangles[i][j]+1][1];
+				v[j][2] = vertices[triangles[i][j]+1][2];
+
+			}
+
+			// calculate vectors along two triangle edges
+			double x1 = v[0][0] - v[1][0];
+			double y1 = v[0][1] - v[1][1];
+			double z1 = v[0][2] - v[1][2];
+
+			double x2 = v[1][0] - v[2][0];
+			double y2 = v[1][1] - v[2][1];
+			double z2 = v[1][2] - v[2][2];
+
+			// calculate face normal through cross product
+			face_normals[i][0] = (y1 * z2) - (z1 * y2);
+			face_normals[i][1] = (z1 * x2) - (x1 * z2);
+			face_normals[i][2] = (x1 * y2) - (y1 * x2);
+
+			double len = sqrt(face_normals[i][0] * face_normals[i][0] + face_normals[i][1] * face_normals[i][1] + face_normals[i][2] * face_normals[i][2]);
+			if (len != 1.0)
+			{
+				face_normals[i][0] /= len;
+				face_normals[i][1] /= len;
+				face_normals[i][2] /= len;
+			}
+		}
+		// resize vertex normals
+		try
+		{
+			//vertex_normals.reserve(vertices.size());
+			//vertex_normals.resize(vertices.size());
+		}
+		catch (bad_alloc)
+		{
+			throw runtime_error("Memory allocation failure");
+		}
+		vector<vector<CVector<3, double>>> temp_normals(vertices.size());
+		temp_normals.resize(vertex_normals.size());
+		size_t normal_index = 0;
+		for (size_t i = 0; i < triangles.size(); i++)
+		{
+			temp_normals[triangles[i][0] + 1].push_back(face_normals[normal_index]);
+			temp_normals[triangles[i][1] + 1].push_back(face_normals[normal_index]);
+			temp_normals[triangles[i][2] + 1].push_back(face_normals[normal_index]);
+			normal_index++;
+		}
+		for (size_t i = 0; i < vertex_normals.size(); i++)
+		{
+			double temp_x = 0.0f;
+			double temp_y = 0.0f;
+			double temp_z = 0.0f;
+			// add up all face normals associated with this vertex
+			for (size_t j = 0; j < temp_normals[i].size(); j++)
+			{
+				double local_temp_x = temp_normals[i][j][0];
+				double local_temp_y = temp_normals[i][j][1];
+				double local_temp_z = temp_normals[i][j][2];
+				double local_len = sqrt(local_temp_x*local_temp_x + local_temp_y*local_temp_y + local_temp_z*local_temp_z);
+
+				if (local_len != 1.0f)
+				{
+					local_temp_x /= local_len;
+					local_temp_y /= local_len;
+					local_temp_z /= local_len;
+				}
+				temp_x += local_temp_x;
+				temp_y += local_temp_y;
+				temp_z += local_temp_z;
+			}
+
+			// average them using a flat linear
+			temp_x /= temp_normals[i].size();
+			temp_y /= temp_normals[i].size();
+			temp_z /= temp_normals[i].size();
+
+			// normalize the final result
+
+			double len = sqrt(temp_x*temp_x + temp_y*temp_y + temp_z*temp_z);
+			if (len != 1.0f)
+			{
+				temp_x /= len;
+				temp_y /= len;
+				temp_z /= len;
+			}
+
+			vertex_normals[i][0] = temp_x;
+			vertex_normals[i][1] = temp_y;
+			vertex_normals[i][2] = temp_z;
+
+		}
+		return vertex_normals;
+	}
 };
+
+

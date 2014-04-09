@@ -62,6 +62,9 @@ bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool use
 	bool bMakeCapture = false;
 	int nPatterns = 0;
 	//namedWindow("Camera", 1);
+	cvWaitKey(500);
+	m_VideoCapture >> m_mTextura;
+	imwrite("Textura.bmp", 0);
 	namedWindow("Patrones");
 
 	HWND win_handle = FindWindow(0, "Patrones");
@@ -83,7 +86,7 @@ bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool use
 	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
 	ShowWindow(win_handle, SW_SHOW);
 	cvMoveWindow("Patrones", posX, posY);
-	//cvWaitKey(5000);
+	cvWaitKey(2000);
 	auto A = GetTickCount();
 	auto B = GetTickCount();
 	for (int i = 0;;)
