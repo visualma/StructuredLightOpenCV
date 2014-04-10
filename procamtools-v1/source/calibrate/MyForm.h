@@ -86,6 +86,7 @@ namespace calibrate {
 	private: System::Windows::Forms::TextBox^  textBoxTime;
 	private: System::Windows::Forms::Label^  label7;
 	private: System::Windows::Forms::ComboBox^  comboBoxThress;
+	private: System::Windows::Forms::ToolStripMenuItem^  view3DModelToolStripMenuItem;
 
 
 
@@ -150,6 +151,7 @@ namespace calibrate {
 			this->triangulateToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->triangulateToolStripMenuItem1 = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->exportAsOBJToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->view3DModelToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->captureToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->loadCapturesToolStripMenuItem1 = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->saveCapturesToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
@@ -256,9 +258,9 @@ namespace calibrate {
 			// 
 			// triangulateToolStripMenuItem
 			// 
-			this->triangulateToolStripMenuItem->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(2) {
+			this->triangulateToolStripMenuItem->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(3) {
 				this->triangulateToolStripMenuItem1,
-					this->exportAsOBJToolStripMenuItem
+					this->exportAsOBJToolStripMenuItem, this->view3DModelToolStripMenuItem
 			});
 			this->triangulateToolStripMenuItem->Name = L"triangulateToolStripMenuItem";
 			this->triangulateToolStripMenuItem->Size = System::Drawing::Size(79, 20);
@@ -267,16 +269,23 @@ namespace calibrate {
 			// triangulateToolStripMenuItem1
 			// 
 			this->triangulateToolStripMenuItem1->Name = L"triangulateToolStripMenuItem1";
-			this->triangulateToolStripMenuItem1->Size = System::Drawing::Size(152, 22);
+			this->triangulateToolStripMenuItem1->Size = System::Drawing::Size(153, 22);
 			this->triangulateToolStripMenuItem1->Text = L"&Triangulate";
 			this->triangulateToolStripMenuItem1->Click += gcnew System::EventHandler(this, &MyForm::triangulateToolStripMenuItem1_Click);
 			// 
 			// exportAsOBJToolStripMenuItem
 			// 
 			this->exportAsOBJToolStripMenuItem->Name = L"exportAsOBJToolStripMenuItem";
-			this->exportAsOBJToolStripMenuItem->Size = System::Drawing::Size(152, 22);
+			this->exportAsOBJToolStripMenuItem->Size = System::Drawing::Size(153, 22);
 			this->exportAsOBJToolStripMenuItem->Text = L"&Export as OBJ";
 			this->exportAsOBJToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::exportAsOBJToolStripMenuItem_Click);
+			// 
+			// view3DModelToolStripMenuItem
+			// 
+			this->view3DModelToolStripMenuItem->Name = L"view3DModelToolStripMenuItem";
+			this->view3DModelToolStripMenuItem->Size = System::Drawing::Size(153, 22);
+			this->view3DModelToolStripMenuItem->Text = L"&View 3D model";
+			this->view3DModelToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::view3DModelToolStripMenuItem_Click);
 			// 
 			// captureToolStripMenuItem
 			// 
@@ -291,28 +300,28 @@ namespace calibrate {
 			// loadCapturesToolStripMenuItem1
 			// 
 			this->loadCapturesToolStripMenuItem1->Name = L"loadCapturesToolStripMenuItem1";
-			this->loadCapturesToolStripMenuItem1->Size = System::Drawing::Size(152, 22);
+			this->loadCapturesToolStripMenuItem1->Size = System::Drawing::Size(150, 22);
 			this->loadCapturesToolStripMenuItem1->Text = L"Load Captures";
 			this->loadCapturesToolStripMenuItem1->Click += gcnew System::EventHandler(this, &MyForm::loadCapturesToolStripMenuItem1_Click);
 			// 
 			// saveCapturesToolStripMenuItem
 			// 
 			this->saveCapturesToolStripMenuItem->Name = L"saveCapturesToolStripMenuItem";
-			this->saveCapturesToolStripMenuItem->Size = System::Drawing::Size(152, 22);
+			this->saveCapturesToolStripMenuItem->Size = System::Drawing::Size(150, 22);
 			this->saveCapturesToolStripMenuItem->Text = L"Save Captures";
 			this->saveCapturesToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::saveCapturesToolStripMenuItem_Click);
 			// 
 			// testWebcamToolStripMenuItem
 			// 
 			this->testWebcamToolStripMenuItem->Name = L"testWebcamToolStripMenuItem";
-			this->testWebcamToolStripMenuItem->Size = System::Drawing::Size(152, 22);
+			this->testWebcamToolStripMenuItem->Size = System::Drawing::Size(150, 22);
 			this->testWebcamToolStripMenuItem->Text = L"Test Webcam";
 			this->testWebcamToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::testWebcamToolStripMenuItem_Click);
 			// 
 			// startCaptureToolStripMenuItem
 			// 
 			this->startCaptureToolStripMenuItem->Name = L"startCaptureToolStripMenuItem";
-			this->startCaptureToolStripMenuItem->Size = System::Drawing::Size(152, 22);
+			this->startCaptureToolStripMenuItem->Size = System::Drawing::Size(150, 22);
 			this->startCaptureToolStripMenuItem->Text = L"Start Capture";
 			this->startCaptureToolStripMenuItem->Click += gcnew System::EventHandler(this, &MyForm::startCaptureToolStripMenuItem_Click);
 			// 
@@ -472,6 +481,7 @@ namespace calibrate {
 			this->comboBoxThress->Name = L"comboBoxThress";
 			this->comboBoxThress->Size = System::Drawing::Size(57, 21);
 			this->comboBoxThress->TabIndex = 9;
+			this->comboBoxThress->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::comboBoxThress_SelectedIndexChanged);
 			// 
 			// label6
 			// 
@@ -792,7 +802,9 @@ namespace calibrate {
 						 std::string ruta2;
 						 for (int i = 0; i < delimitador->Length; i++)
 							 ruta2 += delimitador[i];
+						 m_Cap->m_vCaptures.push_back(m_Cap->m_mTextura);
 						 m_Cap->SerializeCaptures(m_Cap->m_vCaptures, ruta2);
+						 m_Cap->m_vCaptures.pop_back();
 					 }
 				 }
 				 else
@@ -813,7 +825,7 @@ namespace calibrate {
 				 {
 				 }
 				 m_bCapturating = true;
-				 bool captura = m_Cap->CapturePatterns(Convert::ToDouble(textBoxTime->Text), 0, Convert::ToInt32(textBoxProyX->Text, 16), Convert::ToInt32(textBoxProyY->Text, 16), true);
+				 bool captura = m_Cap->CapturePatterns(Convert::ToDouble(textBoxTime->Text), 0, Convert::ToInt32(textBoxProyX->Text), Convert::ToInt32(textBoxProyY->Text), true);
 				 m_bCapturating = false;
 				 if (captura)
 				 {
@@ -1135,7 +1147,8 @@ namespace calibrate {
 				 }
 
 				 m_renderer->makeTriangulation(*m_opt, m_phase_map[0], m_phase_map[1], m_mask, *m_proj_int, *m_cam_int, *m_proj_ext, m_proj_dist, m_cam_dist);
-				// m_renderer->render("meshTemp.ply");
+				 MessageBox::Show("Triangulation ready.",
+					 "Triangulation", MessageBoxButtons::OK,MessageBoxIcon::Asterisk);
 	}
 
 	private: System::Void MyForm_FormClosing(System::Object^  sender, System::Windows::Forms::FormClosingEventArgs^  e) {
@@ -1173,5 +1186,50 @@ namespace calibrate {
 					 "Error", MessageBoxButtons::OK,
 					 MessageBoxIcon::Error);
 	}
-};
+
+	private: System::Void view3DModelToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
+	{
+				 OpenFileDialog^ openFileDialog1 = gcnew OpenFileDialog;
+
+				 openFileDialog1->InitialDirectory = "$(ProjectDir)";
+				 openFileDialog1->Filter = "3D models(*.OBJ;*.PLY)|*.OBJ;*.PLY|All files (*.*)|*.*";
+				 openFileDialog1->FilterIndex = 1;
+				 openFileDialog1->RestoreDirectory = true;
+
+				 if (openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
+				 {
+					 System::String^ ruta = openFileDialog1->FileName;
+					 array<Char, 1>^ delimitador = ruta->ToCharArray();
+					 std::string ruta2;
+					 for (int i = 0; i < delimitador->Length; i++)
+						 ruta2 += delimitador[i];
+					 m_renderer->render(ruta2.c_str());
+				 }
+	}
+	private: System::Void triangulateToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
+	}
+	private: System::Void comboBoxThress_SelectedIndexChanged(System::Object^  sender, System::EventArgs^  e)
+	{
+				 if (m_Cap->m_vCaptures.size() == 0)
+					 return;
+				 int thress = 25 * comboBoxThress->SelectedIndex;
+				 bool captura = m_decoder->Decode(thress, m_Cap->m_vCaptures);
+				 if (captura)
+				 {
+					 Mat b, c;
+					 m_decoder->m_mMask[0].convertTo(c, CV_8UC1);
+					 cvtColor(c, b, CV_GRAY2RGB);
+					 DrawCvImage(&(IplImage)b, pictureMask);
+
+					 Mat temp1 = Mat(m_decoder->m_mGray[0].rows, m_decoder->m_mGray[0].cols, CV_8UC1);
+					 m_decoder->m_mGray[0].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
+					 cvtColor(temp1, b, CV_GRAY2RGB);
+					 DrawCvImage(&(IplImage)b, pictureCorrX);
+					 m_decoder->m_mGray[1].convertTo(temp1, CV_8UC1, 255 / 1024.0, 0);
+					 cvtColor(temp1, b, CV_GRAY2RGB);
+					 DrawCvImage(&(IplImage)b, pictureCorrY);
+
+				 }
+	}
+	};
 }

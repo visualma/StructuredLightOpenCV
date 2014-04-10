@@ -45,6 +45,7 @@ public:
 	// current rotation angle
 	float angle;
 	vector<CVector<3, double>> vertex_normals, vertices;
+	vector<CVector<2, double>> texture_coords;
 	vector<CVector<3, int>> face;
 
 	static void reshape(int width, int height)
@@ -346,8 +347,9 @@ public:
 		}
 		return 1;
 	}
-	int render(char* plyModelStr)
+	int render(string aplyModelStr)
 	{
+		const char* plyModelStr = aplyModelStr.c_str();
 		struct aiLogStream stream;
 		
 		glutInitWindowSize(900, 600);
@@ -505,6 +507,7 @@ public:
 		TRACE("obj => %s\n", filename.c_str());
 		FILE *fl = fopen(path.c_str(), "w");
 		fprintf(fl, "g %s\n",filename.c_str());
+		/*respaldo
 		for (int i = 0; i<vertices.size(); i++)
 		{
 			fprintf(fl, "v %g %g %g\n", vertices[i][0], vertices[i][1], vertices[i][2]);
@@ -519,6 +522,28 @@ public:
 			fprintf(fl, " %d", face[i][1] + 1);
 			fprintf(fl, " %d\n", face[i][2] + 1);
 		}
+		*/
+		for (int i = 0; i<vertices.size(); i++)
+		{
+			fprintf(fl, "v %g %g %g\n", vertices[i][0], vertices[i][1], vertices[i][2]);
+		}
+		for (int i = 0; i < vertex_normals.size(); i++)
+		{
+			fprintf(fl, "vn %g %g %g\n", vertex_normals[i][0], vertex_normals[i][1], vertex_normals[i][2]);
+		}
+		for (int i = 0; i < texture_coords.size(); i++)
+		{
+			fprintf(fl, "vt %g %g\n", texture_coords[i][0], texture_coords[i][1]);
+		}
+		for (int i = 0; i < face.size(); i++)
+		{
+			//fprintf(fl, "f %d/%d/%d", face[i][0] + 1, i, i*3);
+			//fprintf(fl, " %d/%d/%d", face[i][1] + 1, i, i*3+1);
+			//fprintf(fl, " %d/%d/%d\n", face[i][2] + 1, i, i*3+2);
+			fprintf(fl, "f %d/%d", face[i][0] + 1, i);
+			fprintf(fl, " %d/%d", face[i][1] + 1, i);
+			fprintf(fl, " %d/%d\n", face[i][2] + 1, i);
+		}
 		fclose(fl);
 	}
 	// print usage and exit
@@ -528,6 +553,10 @@ public:
 		double> matKpro, CMatrix<3, 3, double>  matKcam,
 		CMatrix<3, 4, double> proRt, double xi1, double xi2)
 	{
+		face.clear();
+		vertices.clear();
+		vertex_normals.clear();
+		texture_coords.clear();
 		std::vector<CVector<3, double>> result;
 		//printf("Angulo de distorcion: %f, se guadara en %s", m_distortion_angle, m_plyfilename);
 		try
@@ -621,15 +650,33 @@ public:
 				// sore in CCW order
 				if (mask.cell(x, y) && mask.cell(x + 1, y) && mask.cell(x + 1, y + 1) &&
 					!distorted(index.cell(x, y), index.cell(x + 1, y), index.cell(x + 1, y + 1), result))
+				{
 					face.push_back(make_vector(index.cell(x, y), index.cell(x + 1, y + 1), index.cell(x + 1, y)));
+					texture_coords.push_back(make_vector((double)x / mask.size(0), (double)(mask.size(1) - y) / mask.size(1)));
+				}
+					
 				if (mask.cell(x, y) && mask.cell(x + 1, y + 1) && mask.cell(x, y + 1) &&
 					!distorted(index.cell(x, y), index.cell(x + 1, y + 1), index.cell(x, y + 1), result))
+				{
 					face.push_back(make_vector(index.cell(x, y), index.cell(x, y + 1), index.cell(x + 1, y + 1)));
+					texture_coords.push_back(make_vector((double)x / mask.size(0), (double)(mask.size(1) - y) / mask.size(1)));
+				}
+					
 			}
 		}
-
 		vertex_normals = GenerateVertexNormalsFromVertices(face, result);
 		vertices = result;
+
+
+		//Rotate X for OBJ model;
+		for (int i = 0; i < vertices.size(); i++)
+		{
+			double tempY = vertices[i][1] * cos(M_PI) - vertices[i][2] * sin(M_PI);
+			double tempZ = vertices[i][1] * sin(M_PI) + vertices[i][2] * cos(M_PI);
+			vertices[i][1] = tempY;
+			vertices[i][2] = tempZ;
+		}
+
 		return 0;
 	}
 

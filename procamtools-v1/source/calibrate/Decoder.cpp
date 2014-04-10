@@ -12,6 +12,8 @@ CDecoder::CDecoder(COptions* Options) : m_vCaptures(0), m_Info(Options)
 bool CDecoder::Decode(float thres, vector<Mat>& vCaptures)
 {
 	m_vCaptures = vCaptures;
+	m_vCorrespondencePoints[0].clear();
+	m_vCorrespondencePoints[1].clear();
 	CCapturador cap;
 	vector<Mat> temp;
 	if (m_Info->m_bHorizontal)

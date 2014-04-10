@@ -62,9 +62,9 @@ bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool use
 	bool bMakeCapture = false;
 	int nPatterns = 0;
 	//namedWindow("Camera", 1);
-	cvWaitKey(500);
-	m_VideoCapture >> m_mTextura;
-	imwrite("Textura.bmp", 0);
+	//cvWaitKey(500);
+	//m_VideoCapture >> m_mTextura;
+	//imwrite("Textura.bmp", 0);
 	namedWindow("Patrones");
 
 	HWND win_handle = FindWindow(0, "Patrones");
@@ -78,9 +78,10 @@ bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool use
 	flags &= ~SWP_NOSIZE;
 	unsigned int x = posX;
 	unsigned int y = posY;
+	printf("x = %d y = %d", x, y);
 	unsigned int w = m_Options->m_nWidth;
 	unsigned int h = m_Options->m_nHeight;
-	SetWindowPos(win_handle, HWND_NOTOPMOST, x, y, w, h, flags);
+	SetWindowPos(win_handle, HWND_TOP, x, y, w, h, flags);
 
 	// Borderless
 	SetWindowLong(win_handle, GWL_STYLE, GetWindowLong(win_handle, GWL_EXSTYLE) | WS_EX_TOPMOST);
@@ -108,7 +109,11 @@ bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool use
 				cv::cvtColor(capture, gray, CV_BGR2GRAY);
 				m_vCaptures.push_back(gray);
 				if (++nPatterns >= m_nPatterns)
+				{
+					m_mTextura = capture.clone();
 					break;
+				}
+					
 			}
 			else
 			{
@@ -211,7 +216,10 @@ bool CCapturador::SerializeCaptures(vector<Mat> imagenes, string str)
 			oss << str << "-" << i << ".bmp";
 		string	ruta = oss.str();
 		imagenes[i].convertTo(imagenes[i], CV_8UC1);
-		imwrite(oss.str(), imagenes[i]);
+		if (i == imagenes.size() - 1)
+			imwrite(str+"Texture.bmp", imagenes[i]);
+		else
+			imwrite(oss.str(), imagenes[i]);
 		oss.clear();
 	}
 	return true;
