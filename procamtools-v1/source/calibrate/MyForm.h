@@ -1043,13 +1043,35 @@ namespace calibrate {
 					 //Write proj-ext
 					 sizeX = m_proj_ext->GetNumCols();
 					 sizeY = m_proj_ext->GetNumRows();
+					 double data[12];
+					 memset(data, 0, 12);
+					 int a = 0;
 					 for (int r = 0; r < sizeY; r++)
 					 for (int c = 0; c < sizeX; c++)
 					 {
+						 data[a++] = (*m_proj_ext)(r, c);
 						 file->Write((*m_proj_ext)(r, c).ToString());
 						 file->Write(" ");
 					 }
 					 file->Close();
+					 Mat projMatrix = Mat(3, 4, CV_64FC1, data);
+					 Mat euler;
+					 Mat trans,cameraMatrix,rotMatrix,x,y,z;
+					 decomposeProjectionMatrix(projMatrix,cameraMatrix, rotMatrix, trans, x, y, z, euler);
+					 System::IO::StreamWriter^ file1 = gcnew System::IO::StreamWriter(filename->TrimEnd({'.','t','x','t'}) + "-Mat.txt");
+					 file1->Write(euler.at<double>(0, 0));
+					 file1->Write("\t");
+					 file1->Write(euler.at<double>(1, 0));
+					 file1->Write("\t");
+					 file1->Write(euler.at<double>(2, 0));
+					 file1->Write("\n");
+					 file1->Write(trans.at<double>(0, 0));
+					 file1->Write("\t");
+					 file1->Write(trans.at<double>(1, 0));
+					 file1->Write("\t");
+					 file1->Write(trans.at<double>(2, 0));
+					 file1->Write("\t");
+					 file1->Close();
 				 }
 	}
 

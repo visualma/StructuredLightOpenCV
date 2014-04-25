@@ -113,6 +113,7 @@
     <ClCompile Include="MatrixUtil.cpp" />
     <ClCompile Include="MyForm.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="simpleRenderGL.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -137,6 +138,7 @@
     </ClInclude>
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="simpleRenderGL.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="..\..\common\Stereo.h" />
   </ItemGroup>
