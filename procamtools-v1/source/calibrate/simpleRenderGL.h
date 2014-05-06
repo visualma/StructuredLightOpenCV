@@ -12,18 +12,21 @@
 #include <vector>
 #include "opencv2\opencv.hpp"
 
+#define aisgl_min(x,y) (x<y?x:y)
+#define aisgl_max(x,y) (y>x?y:x)
+
 using namespace slib;
 
-static int g_mX;
-static int g_mY;
-static float g_s;
+static int g_X;
+static int g_Y;
+static float g_ms;
 class simpleRenderer
 {
 public:
 	simpleRenderer()
 	{
 		angle = 0.0f;
-		g_s = 1.0f;
+		g_ms = 1.0f;
 	}
 	~simpleRenderer()
 	{}
@@ -52,9 +55,9 @@ public:
 
 	void myMouseMove(int x, int y)
 	{
-		g_mX = x;
-		g_mY = 768 - y;
-		printf("%d", g_mX);
+		g_X = x;
+		g_Y = 768 - y;
+		printf("%d", g_X);
 		glutPostRedisplay();
 	}
 
@@ -78,8 +81,59 @@ public:
 	}
 
 	void display()
-	{}
+	{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		/*
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		gluLookAt(0.f, 0.f, 3.f, 0.f, 0.f, -5.f, 0.f, 1.f, 0.f);
+
+		float width = glutGet(GLUT_WINDOW_WIDTH);
+		float height = glutGet(GLUT_WINDOW_HEIGHT);
+		float rX = (g_mX / width) * 90 - 45;
+		float rY = (g_mY / height) * 90 - 45 + 180;
+		glRotatef(rY, 1.0, 0.f, 0.f);
+		glRotatef(-rX, 0.0f, 1.0f, 0.0f);
+
+		float tmp;
+		tmp = m_sceneMax[0] - m_sceneMin[0];
+		tmp = aisgl_max(m_sceneMax[1] - m_sceneMin[1], tmp);
+		tmp = aisgl_max(m_sceneMax[2] - m_sceneMin[2], tmp);
+		tmp = 1.f / tmp;
+		glScalef(tmp*g_s, tmp*g_s, tmp*g_s);
+
+		glTranslatef(-m_sceneCenter[0], -m_sceneCenter[1], -m_sceneCenter[2]);
+		*/
+
+		glBegin(GL_TRIANGLES);
+		glVertex3f(-0.5, -0.5, 0.0);
+		glVertex3f(0.5, 0.0, 0.0);
+		glVertex3f(0.0, 0.5, 0.0);
+		glEnd();
+
+		glutSwapBuffers();
+	}
+
+	void init()
+	{
+		
+		char *myargv[1];
+		int myargc = 1;
+		myargv[0] = strdup("calibrate");
+		glutInit(&myargc, myargv);
+		glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+		glutInitWindowPosition(100, 100);
+		glutInitWindowSize(900, 600);
+		glutCreateWindow("Structured Light point cloud viewer.");
+
+		setupDrawCallback();
+		glutReshapeFunc(&simpleRenderer::reshape);
+		setupMouseFunction();
+		setupKeyboarFunction();
+
+		glutMainLoop();
+	}
 
 
 

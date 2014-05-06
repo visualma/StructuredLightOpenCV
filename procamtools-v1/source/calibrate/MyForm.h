@@ -15,6 +15,7 @@
 #include "Capturador.h"
 #include "Form1.h"
 #include "Renderer.h"
+#include "simpleRenderGL.h"
 #include "opencv2\opencv.hpp"
 
 namespace calibrate {
@@ -1058,6 +1059,7 @@ namespace calibrate {
 					 Mat euler;
 					 Mat trans,cameraMatrix,rotMatrix,x,y,z;
 					 decomposeProjectionMatrix(projMatrix,cameraMatrix, rotMatrix, trans, x, y, z, euler);
+					 /*
 					 System::IO::StreamWriter^ file1 = gcnew System::IO::StreamWriter(filename->TrimEnd({'.','t','x','t'}) + "-Mat.txt");
 					 file1->Write(euler.at<double>(0, 0));
 					 file1->Write("\t");
@@ -1072,6 +1074,7 @@ namespace calibrate {
 					 file1->Write(trans.at<double>(2, 0));
 					 file1->Write("\t");
 					 file1->Close();
+					 */
 				 }
 	}
 
@@ -1211,6 +1214,7 @@ namespace calibrate {
 
 	private: System::Void view3DModelToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
 	{
+				 /*
 				 OpenFileDialog^ openFileDialog1 = gcnew OpenFileDialog;
 
 				 openFileDialog1->InitialDirectory = "$(ProjectDir)";
@@ -1225,8 +1229,11 @@ namespace calibrate {
 					 std::string ruta2;
 					 for (int i = 0; i < delimitador->Length; i++)
 						 ruta2 += delimitador[i];
-					 m_renderer->render(ruta2.c_str());
+					 //m_renderer->render(ruta2.c_str());
 				 }
+				 */
+				 simpleRenderer* rend = new simpleRenderer();
+				 rend->init();
 	}
 	private: System::Void triangulateToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
 	}

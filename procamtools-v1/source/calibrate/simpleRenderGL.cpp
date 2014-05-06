@@ -17,8 +17,8 @@ void simpleRenderer::setupDrawCallback()
 
 void MouseCallback(int x, int y)
 {
-	g_mX = x;
-	g_mY = y;
+	g_X = x;
+	g_Y = y;
 }
 
 void simpleRenderer::setupMouseFunction()
@@ -31,9 +31,9 @@ void simpleRenderer::setupMouseFunction()
 void KeyboardCallback(unsigned char key, int x, int y)
 {
 	if (key == 'a')
-		g_s += 0.1;
+		g_ms += 0.1;
 	if (key == 'z')
-		g_s -= 0.1;
+		g_ms -= 0.1;
 	printf("Tecla %c apretada\n", key);
 }
 void simpleRenderer::setupKeyboarFunction()
