@@ -66,7 +66,7 @@
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\Program Files\Assimp\lib\x86;C:\dev\glut-3.7.6\lib\glut\Debug;C:\dev\freeglut-2.8.1\lib\x86\Debug;$(OPENCV_DIR)/x86/vc12/lib;C:\Program Files\Intel\MKL\10.2.6.037\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files\Assimp\lib\x86;C:\dev\glut-3.7.6\lib\glut\Debug;$(OPENCV_DIR)/x86/vc12/lib;C:\Program Files\Intel\MKL\10.2.6.037\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
@@ -95,7 +95,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\Program Files\Assimp\lib\x86;C:\dev\glut-3.7.6\lib\glut\Debug;C:\dev\freeglut-2.8.1\lib\x86\Debug;$(OPENCV_DIR)/x86/vc12/lib;C:\Program Files\Intel\MKL\10.2.6.037\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files\Assimp\lib\x86;C:\dev\glut-3.7.6\lib\glut\Debug;$(OPENCV_DIR)/x86/vc12/lib;C:\Program Files\Intel\MKL\10.2.6.037\ia32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>

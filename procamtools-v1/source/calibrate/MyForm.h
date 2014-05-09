@@ -2,6 +2,9 @@
 #include "Field.h"
 #include "ImageBmpIO.h"
 
+
+#include "simpleRenderGL.h"
+
 #include "MathBaseLapack.h"
 #include "MiscUtil.h"
 #include "Stereo.h"
@@ -15,7 +18,7 @@
 #include "Capturador.h"
 #include "Form1.h"
 #include "Renderer.h"
-#include "simpleRenderGL.h"
+
 #include "opencv2\opencv.hpp"
 
 namespace calibrate {
@@ -1232,8 +1235,8 @@ namespace calibrate {
 					 //m_renderer->render(ruta2.c_str());
 				 }
 				 */
-				 simpleRenderer* rend = new simpleRenderer();
-				 rend->init();
+				 //simpleRenderer* rend = new simpleRenderer();
+				 //rend->init();
 	}
 	private: System::Void triangulateToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
 	}
