@@ -1,0 +1,10 @@
+Info,  T7564: Load C:\Users\Vampire\Desktop\hola\prueba release.OBJ
+Info,  T7564: Found a matching importer for this file format
+Info,  T7564: Import root directory is 'C:\Users\Vampire\Desktop\hola\'
+Info,  T7564: Entering post processing pipeline
+Info,  T7564: Points: 0, Lines: 0, Triangles: 1, Polygons: 0 (Meshes, X = removed)
+Info,  T7564: GenVertexNormalsProcess finished. Vertex normals have been calculated
+Info,  T7564: CalcTangentsProcess finished. Tangents have been calculated
+Info,  T7564: JoinVerticesProcess finished | Verts in: 635424 out: 630455 | ~0.8%
+Info,  T7564: Cache relevant are 1 meshes (211808 faces). Average output ACMR is 2.976540
+Info,  T7564: Leaving post processing pipeline
