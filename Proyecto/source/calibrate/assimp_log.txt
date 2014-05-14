@@ -1,0 +1,7 @@
+Info,  T9200: Load C:\Users\Vampire\Documents\GitHub\StructuredLightOpenCV\procamtools-v1\source\resources\Captures\Proyector sobre camara\Sala V1.OBJ
+Info,  T9200: Found a matching importer for this file format
+Info,  T9200: Import root directory is 'C:\Users\Vampire\Documents\GitHub\StructuredLightOpenCV\procamtools-v1\source\resources\Captures\Proyector sobre camara\'
+Info,  T9200: Entering post processing pipeline
+Info,  T9200: Points: 0, Lines: 0, Triangles: 1, Polygons: 0 (Meshes, X = removed)
+Info,  T9200: GenVertexNormalsProcess finished. Vertex normals have been calculated
+Info,  T9200: CalcTangentsProcess finished. Tangents have been calculated

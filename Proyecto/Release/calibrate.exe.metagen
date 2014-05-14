@@ -1,0 +1,45 @@
+  calibrate.MyForm.resources - Embedded, ContainedInManifestFile, 
+ImageRuntimeVersion: v4.0.30319
+Assembly calibrate, Version=0.0.*, Culture=Todos los idiomas (todos los países): 
+	hash=SHA1, flags=PublicKey
+Assembly mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a: 
+	hash=None, flags=None
+Assembly System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Xml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Class SL.Form1: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :System.Windows.Forms.Form
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+Class calibrate.MyForm: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+  :System.Windows.Forms.Form
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    CCapturador* m_Cap : Public
+    CDecoder* m_decoder : Public
+    COptions* m_options : Public
+    Renderer* m_renderer : Public
+    options_t* m_opt : Public
+    _IplImage* frame : Public
+    CProCamCalibrate* m_calib : Public
+    Boolean m_bShowWebcam : Public
+    Boolean m_bStartingWorker IsVolatile : Public
+    Boolean m_bMatrixReady : Public
+    Boolean m_bCapturating : Public
+    Int32 camBusy : Public
+    Int32 camDevice : Public
+    slib.CMatrix<3\,3\,double>* m_cam_int : Public
+    slib.CMatrix<3\,3\,double>* m_proj_int : Public
+    slib.CMatrix<3\,4\,double>* m_proj_ext : Public
+    Double m_cam_dist : Public
+    Double m_proj_dist : Public
+    Double m_fvoX : Public
+    Double m_fvoY : Public
+    cv.Mat* m_frame : Public
+    cv.Mat* m_mProjMatrix : Public
