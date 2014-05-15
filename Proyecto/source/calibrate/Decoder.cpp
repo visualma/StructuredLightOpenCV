@@ -9,7 +9,7 @@ CDecoder::CDecoder(COptions* Options) : m_vCaptures(0), m_Info(Options)
 
 }
 
-bool CDecoder::Decode(float thres, vector<Mat>& vCaptures)
+bool CDecoder::Decode(float* thres, vector<Mat>& vCaptures)
 {
 	m_vCaptures = vCaptures;
 	m_vCorrespondencePoints[0].clear();
@@ -18,10 +18,10 @@ bool CDecoder::Decode(float thres, vector<Mat>& vCaptures)
 	vector<Mat> temp;
 	if (m_Info->m_bHorizontal)
 	{
-		DecodeGray(0, 0.1);
+		DecodeGray(0, *thres);
 		//Mascarear
 		m_mMask[0] = Mat::zeros(m_mGray[0].rows,m_mGray[0].cols, CV_8UC1);
-		cv::threshold(m_mGrayError[0], m_mMask[0], thres, 255, CV_THRESH_BINARY);
+		cv::threshold(m_mGrayError[0], m_mMask[0], 25, 255, CV_THRESH_BINARY);
 		m_mMask[0].convertTo(m_mMask[0], CV_16UC1);
 		/*
 		if (m_Info->m_bPhase)
@@ -49,10 +49,10 @@ bool CDecoder::Decode(float thres, vector<Mat>& vCaptures)
 	}
 	if (m_Info->m_bVertical)
 	{
-		DecodeGray(1, 0.1);
+		DecodeGray(1, *thres);
 		//Mascarear
 		m_mMask[1] = Mat::zeros(m_mGray[1].rows, m_mGray[1].cols, CV_8UC1);
-		cv::threshold(m_mGrayError[1], m_mMask[1], thres, 255, CV_THRESH_BINARY);
+		cv::threshold(m_mGrayError[1], m_mMask[1], 25, 255, CV_THRESH_BINARY);
 		m_mMask[1].convertTo(m_mMask[1], CV_16UC1);
 		/*
 		if (m_Info->m_bPhase)

@@ -76,7 +76,7 @@ namespace calibrate {
 	private: System::Windows::Forms::TextBox^  textBoxProyX;
 
 	private: System::Windows::Forms::Label^  label1;
-	private: System::Windows::Forms::CheckBox^  checkBoxComplementary;
+
 
 	private: System::Windows::Forms::Label^  label4;
 	private: System::Windows::Forms::ToolStripMenuItem^  calibrateCameraProjectorToolStripMenuItem;
@@ -92,6 +92,10 @@ namespace calibrate {
 	private: System::Windows::Forms::Label^  label7;
 	private: System::Windows::Forms::ComboBox^  comboBoxThress;
 	private: System::Windows::Forms::ToolStripMenuItem^  view3DModelToolStripMenuItem;
+	private: System::Windows::Forms::Label^  label8;
+	private: System::Windows::Forms::ComboBox^  comboBoxWebcam;
+	private: System::Windows::Forms::Label^  label9;
+	private: System::Windows::Forms::ComboBox^  comboBoxCompresion;
 
 
 
@@ -176,12 +180,15 @@ namespace calibrate {
 			this->pictureCorrY = (gcnew System::Windows::Forms::PictureBox());
 			this->backgroundWorker1 = (gcnew System::ComponentModel::BackgroundWorker());
 			this->groupBox1 = (gcnew System::Windows::Forms::GroupBox());
+			this->label9 = (gcnew System::Windows::Forms::Label());
+			this->comboBoxCompresion = (gcnew System::Windows::Forms::ComboBox());
+			this->label8 = (gcnew System::Windows::Forms::Label());
+			this->comboBoxWebcam = (gcnew System::Windows::Forms::ComboBox());
 			this->label7 = (gcnew System::Windows::Forms::Label());
 			this->comboBoxThress = (gcnew System::Windows::Forms::ComboBox());
 			this->label6 = (gcnew System::Windows::Forms::Label());
 			this->label5 = (gcnew System::Windows::Forms::Label());
 			this->textBoxTime = (gcnew System::Windows::Forms::TextBox());
-			this->checkBoxComplementary = (gcnew System::Windows::Forms::CheckBox());
 			this->label3 = (gcnew System::Windows::Forms::Label());
 			this->label2 = (gcnew System::Windows::Forms::Label());
 			this->textBoxProyY = (gcnew System::Windows::Forms::TextBox());
@@ -447,12 +454,15 @@ namespace calibrate {
 			// 
 			// groupBox1
 			// 
+			this->groupBox1->Controls->Add(this->label9);
+			this->groupBox1->Controls->Add(this->comboBoxCompresion);
+			this->groupBox1->Controls->Add(this->label8);
+			this->groupBox1->Controls->Add(this->comboBoxWebcam);
 			this->groupBox1->Controls->Add(this->label7);
 			this->groupBox1->Controls->Add(this->comboBoxThress);
 			this->groupBox1->Controls->Add(this->label6);
 			this->groupBox1->Controls->Add(this->label5);
 			this->groupBox1->Controls->Add(this->textBoxTime);
-			this->groupBox1->Controls->Add(this->checkBoxComplementary);
 			this->groupBox1->Controls->Add(this->label3);
 			this->groupBox1->Controls->Add(this->label2);
 			this->groupBox1->Controls->Add(this->textBoxProyY);
@@ -466,10 +476,49 @@ namespace calibrate {
 			this->groupBox1->TabIndex = 2;
 			this->groupBox1->TabStop = false;
 			// 
+			// label9
+			// 
+			this->label9->AutoSize = true;
+			this->label9->Location = System::Drawing::Point(10, 164);
+			this->label9->Name = L"label9";
+			this->label9->Size = System::Drawing::Size(131, 13);
+			this->label9->TabIndex = 14;
+			this->label9->Text = L"Triangulation Compression";
+			// 
+			// comboBoxCompresion
+			// 
+			this->comboBoxCompresion->DropDownStyle = System::Windows::Forms::ComboBoxStyle::DropDownList;
+			this->comboBoxCompresion->FormattingEnabled = true;
+			this->comboBoxCompresion->Items->AddRange(gcnew cli::array< System::Object^  >(5) { L"1", L"2", L"3", L"4", L"5" });
+			this->comboBoxCompresion->Location = System::Drawing::Point(93, 185);
+			this->comboBoxCompresion->Name = L"comboBoxCompresion";
+			this->comboBoxCompresion->Size = System::Drawing::Size(57, 21);
+			this->comboBoxCompresion->TabIndex = 13;
+			// 
+			// label8
+			// 
+			this->label8->AutoSize = true;
+			this->label8->Location = System::Drawing::Point(10, 99);
+			this->label8->Name = L"label8";
+			this->label8->Size = System::Drawing::Size(60, 13);
+			this->label8->TabIndex = 12;
+			this->label8->Text = L"Webcam #";
+			// 
+			// comboBoxWebcam
+			// 
+			this->comboBoxWebcam->DropDownStyle = System::Windows::Forms::ComboBoxStyle::DropDownList;
+			this->comboBoxWebcam->FormattingEnabled = true;
+			this->comboBoxWebcam->Items->AddRange(gcnew cli::array< System::Object^  >(4) { L"0", L"1", L"2", L"3" });
+			this->comboBoxWebcam->Location = System::Drawing::Point(93, 99);
+			this->comboBoxWebcam->Name = L"comboBoxWebcam";
+			this->comboBoxWebcam->Size = System::Drawing::Size(57, 21);
+			this->comboBoxWebcam->TabIndex = 11;
+			this->comboBoxWebcam->SelectedIndexChanged += gcnew System::EventHandler(this, &MyForm::comboBoxWebcam_SelectedIndexChanged);
+			// 
 			// label7
 			// 
 			this->label7->AutoSize = true;
-			this->label7->Location = System::Drawing::Point(10, 95);
+			this->label7->Location = System::Drawing::Point(10, 132);
 			this->label7->Name = L"label7";
 			this->label7->Size = System::Drawing::Size(59, 13);
 			this->label7->TabIndex = 10;
@@ -477,12 +526,13 @@ namespace calibrate {
 			// 
 			// comboBoxThress
 			// 
+			this->comboBoxThress->DropDownStyle = System::Windows::Forms::ComboBoxStyle::DropDownList;
 			this->comboBoxThress->FormattingEnabled = true;
 			this->comboBoxThress->Items->AddRange(gcnew cli::array< System::Object^  >(10) {
 				L"10%", L"20%", L"30%", L"40%", L"50%", L"60%",
 					L"70%", L"80%", L"90%", L"100%"
 			});
-			this->comboBoxThress->Location = System::Drawing::Point(93, 95);
+			this->comboBoxThress->Location = System::Drawing::Point(93, 132);
 			this->comboBoxThress->Name = L"comboBoxThress";
 			this->comboBoxThress->Size = System::Drawing::Size(57, 21);
 			this->comboBoxThress->TabIndex = 9;
@@ -513,18 +563,6 @@ namespace calibrate {
 			this->textBoxTime->Size = System::Drawing::Size(53, 20);
 			this->textBoxTime->TabIndex = 6;
 			this->textBoxTime->Text = L"500";
-			// 
-			// checkBoxComplementary
-			// 
-			this->checkBoxComplementary->AutoSize = true;
-			this->checkBoxComplementary->Checked = true;
-			this->checkBoxComplementary->CheckState = System::Windows::Forms::CheckState::Checked;
-			this->checkBoxComplementary->Location = System::Drawing::Point(13, 116);
-			this->checkBoxComplementary->Name = L"checkBoxComplementary";
-			this->checkBoxComplementary->Size = System::Drawing::Size(162, 17);
-			this->checkBoxComplementary->TabIndex = 5;
-			this->checkBoxComplementary->Text = L"Use Complementary Patterns";
-			this->checkBoxComplementary->UseVisualStyleBackColor = true;
 			// 
 			// label3
 			// 
@@ -650,8 +688,25 @@ namespace calibrate {
 				 m_frame = new Mat();
 				 m_mProjMatrix = new Mat();
 				 comboBoxThress->SelectedIndex = 2;
+				 comboBoxWebcam->SelectedIndex = 0;
+				 comboBoxCompresion->SelectedIndex = 1;
 	}
-
+	private: System::Void MyForm_FormClosing(System::Object^  sender, System::Windows::Forms::FormClosingEventArgs^  e) {
+				 m_bShowWebcam = false;
+				 if (m_Cap->m_VideoCapture.isOpened())
+					 m_Cap->m_VideoCapture.release();
+				 delete m_options;
+				 delete m_Cap;
+				 delete m_renderer;
+				 delete m_opt;
+				 delete m_decoder;
+				 delete m_calib;
+				 delete m_cam_int;
+				 delete m_proj_int;
+				 delete m_proj_ext;
+				 m_frame->release();
+				 m_mProjMatrix->release();
+	}
 	private: System::Void loadCapturesToolStripMenuItem1_Click(System::Object^  sender, System::EventArgs^  e)
 	{
 
@@ -680,8 +735,10 @@ namespace calibrate {
 							 cvtColor(m_Cap->m_vCaptures[0], b, CV_GRAY2RGB);
 							 DrawCvImage(&(IplImage)b, pictureCapture);
 							 m_decoder->m_Info->m_bComplementary = true;
-							 int thress = 25 * comboBoxThress->SelectedIndex;
+							 float* thress = new float;
+							 *thress = 0.1 * comboBoxThress->SelectedIndex;
 							 bool captura = m_decoder->Decode(thress, m_Cap->m_vCaptures);
+							 delete thress;
 							 if (captura)
 							 {
 								 Mat b;
@@ -845,8 +902,11 @@ namespace calibrate {
 						 m_decoder->m_Info->m_bComplementary = true;
 					// else
 					//	 m_decoder->m_Info->m_bComplementary = false;
-						 int thress = 25 * comboBoxThress->SelectedIndex;
-					 captura = m_decoder->Decode(thress, m_Cap->m_vCaptures);
+					float* thress = new float;
+					*thress = 0.1 * comboBoxThress->SelectedIndex;
+					bool captura = m_decoder->Decode(thress, m_Cap->m_vCaptures);
+					delete thress;
+					delete thress;
 					 if (captura)
 					 {
 						 Mat b,c;
@@ -898,7 +958,7 @@ namespace calibrate {
 						 m_bShowWebcam = false;
 						 break;
 					 }
-					 if (camBusy) continue;
+					 if (camBusy||!m_bShowWebcam) continue;
 					 try
 					 {
 						 m_Cap->m_VideoCapture >> mFrame;
@@ -1071,9 +1131,12 @@ namespace calibrate {
 					 Mat rodrigues;
 					 Mat trans, rotMatrix, x, y, z, cameraMatrix;
 					 decomposeProjectionMatrix(projMatrix, cameraMatrix, rotMatrix, trans, x, y, z, euler);
-					 //trans.at<double>(0, 0) /= trans.at<double>(3, 0);
-					 //trans.at<double>(1, 0) /= trans.at<double>(3, 0);
-					 //trans.at<double>(2, 0) /= trans.at<double>(3, 0);
+					 trans.at<double>(0, 0) /= trans.at<double>(3, 0);
+					 trans.at<double>(1, 0) /= trans.at<double>(3, 0);
+					 trans.at<double>(2, 0) /= trans.at<double>(3, 0);
+					 trans.at<double>(0, 0) *= -100.0f;
+					 trans.at<double>(1, 0) *= -100.0f;
+					 trans.at<double>(2, 0) *= -100.0f;
 					 Rodrigues(rotMatrix, rodrigues);
 					 float ai = rodrigues.at<double>(0, 0);
 					 float bi = rodrigues.at<double>(1, 0);
@@ -1093,6 +1156,8 @@ namespace calibrate {
 					 file1->Write("\n");
 					 file1->Write("\tz: ");
 					 file1->Write(trans.at<double>(2, 0).ToString());
+
+					 /*
 					 file1->Write("\ntransform matrix (in world units):\n");
 					 file1->Write(rotMatrix.at<double>(0, 0).ToString());
 					 file1->Write("\n");
@@ -1119,6 +1184,34 @@ namespace calibrate {
 					 file1->Write(trans.at<double>(2, 0).ToString());
 					 file1->Write("\n");
 					 file1->Write(trans.at<double>(3, 0).ToString());
+					 */
+					 double* rm = rotMatrix.ptr<double>(0);
+					 file1->Write("\ntransform matrix (in world units):\n");
+					 file1->Write(rm[0].ToString());
+					 file1->Write("\n");
+					 file1->Write(rm[3].ToString());
+					 file1->Write("\n");
+					 file1->Write(rm[6].ToString());
+					 file1->Write("\n0\n");
+					 file1->Write(rm[1].ToString());
+					 file1->Write("\n");
+					 file1->Write(rm[4].ToString());
+					 file1->Write("\n");
+					 file1->Write(rm[7].ToString());
+					 file1->Write("\n0\n");
+					 file1->Write(rm[2].ToString());
+					 file1->Write("\n");
+					 file1->Write(rm[5].ToString());
+					 file1->Write("\n");
+					 file1->Write(rm[8].ToString());
+					 file1->Write("\n0\n");
+					 file1->Write(trans.at<double>(0, 0).ToString());
+					 file1->Write("\n");
+					 file1->Write(trans.at<double>(1, 0).ToString());
+					 file1->Write("\n");
+					 file1->Write(trans.at<double>(2, 0).ToString());
+					 file1->Write("\n");
+					 file1->Write("1");// trans.at<double>(3, 0).ToString());
 
 					 file1->Write("\naxis-angle rotation (in degrees):\n");
 					 file1->Write("\taxis x: ");
@@ -1275,15 +1368,12 @@ namespace calibrate {
 						 m_phase_map[k].cell(i, j) = a.at<ushort>(j, i);
 				 }
 
-				 m_renderer->makeTriangulation(*m_opt, m_phase_map[0], m_phase_map[1], m_mask, *m_proj_int, *m_cam_int, *m_proj_ext, m_proj_dist, m_cam_dist);
+				 m_renderer->makeTriangulation(*m_opt, m_phase_map[0], m_phase_map[1], m_mask, *m_proj_int, *m_cam_int, *m_proj_ext, m_proj_dist, m_cam_dist,comboBoxCompresion->SelectedIndex+1);
 				 MessageBox::Show("Triangulation ready.",
 					 "Triangulation", MessageBoxButtons::OK,MessageBoxIcon::Asterisk);
 	}
 
-	private: System::Void MyForm_FormClosing(System::Object^  sender, System::Windows::Forms::FormClosingEventArgs^  e) {
-				 if (m_Cap->m_VideoCapture.isOpened())
-					 m_Cap->m_VideoCapture.release();
-	}
+
 	private: System::Void exportAsOBJToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e)
 	{
 				 if (m_renderer->vertices.size()!=0)
@@ -1348,8 +1438,10 @@ namespace calibrate {
 	{
 				 if (m_Cap->m_vCaptures.size() == 0)
 					 return;
-				 int thress = 25 * comboBoxThress->SelectedIndex;
+				 float* thress = new float;
+				 *thress = 0.1 * comboBoxThress->SelectedIndex;
 				 bool captura = m_decoder->Decode(thress, m_Cap->m_vCaptures);
+				 delete thress;
 				 if (captura)
 				 {
 					 Mat b, c;
@@ -1367,5 +1459,17 @@ namespace calibrate {
 
 				 }
 	}
-	};
+	private: System::Void comboBoxWebcam_SelectedIndexChanged(System::Object^  sender, System::EventArgs^  e)
+	{
+				 cv::VideoCapture temp_camera(comboBoxWebcam->SelectedIndex);
+				 bool res = (temp_camera.isOpened());
+				 temp_camera.release();
+				 if (res)
+					 camDevice = comboBoxWebcam->SelectedIndex;
+				 else
+					 MessageBox::Show("No hay ninguna camara en la ranura especificada.",
+					 "Error", MessageBoxButtons::OK,
+					 MessageBoxIcon::Error);
+	}
+};
 }

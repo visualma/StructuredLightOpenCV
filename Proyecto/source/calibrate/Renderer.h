@@ -525,12 +525,13 @@ public:
 		*/
 		for (int i = 0; i<vertices.size(); i++)
 		{
-			fprintf(fl, "v %g %g %g\n", vertices[i][0], vertices[i][1], vertices[i][2]);
+			fprintf(fl, "v %g %g %g\n", vertices[i][0] * 100.0f, vertices[i][1] * 100.0f, vertices[i][2] * 100.0f);
 		}
+		/*//Normales
 		for (int i = 0; i < vertex_normals.size(); i++)
 		{
 			fprintf(fl, "vn %g %g %g\n", vertex_normals[i][0], vertex_normals[i][1], vertex_normals[i][2]);
-		}
+		}*/
 		for (int i = 0; i < texture_coords.size(); i++)
 		{
 			fprintf(fl, "vt %g %g\n", texture_coords[i][0], texture_coords[i][1]);
@@ -551,8 +552,9 @@ public:
 	// entry point
 	int makeTriangulation(options_t options, Field<2, float> horizontal, Field<2, float> vertical, Field<2, float> mask, CMatrix<3, 3,
 		double> matKpro, CMatrix<3, 3, double>  matKcam,
-		CMatrix<3, 4, double> proRt, double xi1, double xi2)
+		CMatrix<3, 4, double> proRt, double xi1, double xi2,int compresion)
 	{
+		compresion = max(compresion, 1);
 		face.clear();
 		vertices.clear();
 		vertex_normals.clear();
@@ -643,28 +645,29 @@ public:
 		else
 			index.cell(x, y) = -1;
 
-		for (int y = 0; y<mask.size(1) - 1; y++)
+		//media resolución
+		for (int y = 0; y<mask.size(1) - 1; y+=compresion)
 		{
-			for (int x = 0; x<mask.size(0) - 1; x++)
+			for (int x = 0; x<mask.size(0) - 1; x += compresion)
 			{
 				// sore in CCW order
-				if (mask.cell(x, y) && mask.cell(x + 1, y) && mask.cell(x + 1, y + 1) &&
-					!distorted(index.cell(x, y), index.cell(x + 1, y), index.cell(x + 1, y + 1), result))
+				if (mask.cell(x, y) && mask.cell(x + compresion, y) && mask.cell(x + compresion, y + compresion) &&
+					!distorted(index.cell(x, y), index.cell(x + compresion, y), index.cell(x + compresion, y + compresion), result))
 				{
-					face.push_back(make_vector(index.cell(x, y), index.cell(x + 1, y + 1), index.cell(x + 1, y)));
+					face.push_back(make_vector(index.cell(x, y), index.cell(x + compresion, y + compresion), index.cell(x + compresion, y)));
 					texture_coords.push_back(make_vector((double)x / mask.size(0), (double)(mask.size(1) - y) / mask.size(1)));
 				}
-					
-				if (mask.cell(x, y) && mask.cell(x + 1, y + 1) && mask.cell(x, y + 1) &&
-					!distorted(index.cell(x, y), index.cell(x + 1, y + 1), index.cell(x, y + 1), result))
+
+				if (mask.cell(x, y) && mask.cell(x + compresion, y + compresion) && mask.cell(x, y + compresion) &&
+					!distorted(index.cell(x, y), index.cell(x + compresion, y + compresion), index.cell(x, y + compresion), result))
 				{
-					face.push_back(make_vector(index.cell(x, y), index.cell(x, y + 1), index.cell(x + 1, y + 1)));
+					face.push_back(make_vector(index.cell(x, y), index.cell(x, y + compresion), index.cell(x + compresion, y + compresion)));
 					texture_coords.push_back(make_vector((double)x / mask.size(0), (double)(mask.size(1) - y) / mask.size(1)));
 				}
-					
+
 			}
 		}
-		vertex_normals = GenerateVertexNormalsFromVertices(face, result);
+		//vertex_normals = GenerateVertexNormalsFromVertices(face, result);
 		vertices = result;
 
 		/*
