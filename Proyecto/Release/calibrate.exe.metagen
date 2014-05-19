@@ -43,3 +43,4 @@ Class calibrate.MyForm: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
     Double m_fvoY : Public
     cv.Mat* m_frame : Public
     cv.Mat* m_mProjMatrix : Public
+    cv.Mat* m_recalibMatrix : Public

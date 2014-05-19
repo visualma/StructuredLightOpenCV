@@ -16,11 +16,16 @@
 #include "../Options.h"
 #include "Field.h"
 #include "ImageBmpIO.h"
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
 #define aisgl_min(x,y) (x<y?x:y)
 #define aisgl_max(x,y) (y>x?y:x)
 
 using namespace slib;
-
+using namespace cv;
 static int g_mX;
 static int g_mY;
 static float g_s;
@@ -550,9 +555,9 @@ public:
 	// print usage and exit
 
 	// entry point
-	int makeTriangulation(options_t options, Field<2, float> horizontal, Field<2, float> vertical, Field<2, float> mask, CMatrix<3, 3,
+	Mat makeTriangulation(options_t options, Field<2, float> horizontal, Field<2, float> vertical, Field<2, float> mask, CMatrix<3, 3,
 		double> matKpro, CMatrix<3, 3, double>  matKcam,
-		CMatrix<3, 4, double> proRt, double xi1, double xi2,int compresion)
+		CMatrix<3, 4, double> proRt, double xi1, double xi2,int compresion,Mat recalib)
 	{
 		compresion = max(compresion, 1);
 		face.clear();
@@ -560,7 +565,11 @@ public:
 		vertex_normals.clear();
 		texture_coords.clear();
 		std::vector<CVector<3, double>> result;
+		float lejano = 0,cercano = 10e7;
 		//printf("Angulo de distorcion: %f, se guadara en %s", m_distortion_angle, m_plyfilename);
+		Point2f** proDisorted = new Point2f*[1024];
+		for (int i = 0; i < 1024; i++)
+			proDisorted[i] = new Point2f[768];
 		try
 		{
 			CVector<2, double>
@@ -613,15 +622,20 @@ public:
 							proj_y = -(epiline[0] * horizontal.cell(x, y) + epiline[2]) / epiline[1];
 						}
 						slib::fmatrix::CancelRadialDistortion(xi1, cod1, make_vector<double>(horizontal.cell(x, y), proj_y), p2d[1]);
-
+						proDisorted[(int)horizontal.cell(x,y)][(int)vertical.cell(x,y)] = Point2f(p2d[1][0], p2d[1][1]);
 						// triangulate
 						CVector<3, double> p3d;
 						SolveStereo(p2d, matrices, p3d);
 
 						// save
 						result.push_back(p3d);
-						if (p3d[2]<0)
+						if (p3d[2] < 0)
 							nbehind++;
+						else
+						{
+							lejano = max(lejano, (float)p3d[2]);
+							cercano = min(cercano, (float)p3d[2]);
+						}
 					}
 				}
 				if (m_debug && nbehind)
@@ -633,18 +647,25 @@ public:
 		catch (const std::exception& e)
 		{
 			TRACE("error: %s\n", e.what());
-			return -1;
+			return cv::Mat();
 		}
-
 
 		Field<2, int> index(mask.size());
 		for (int y = 0, idx = 0; y<mask.size(1); y++)
 		for (int x = 0; x<mask.size(0); x++)
 		if (mask.cell(x, y))
+		{
 			index.cell(x, y) = idx++;
+		}
 		else
 			index.cell(x, y) = -1;
 
+
+		cv::Mat depth = Mat(mask.size(1), mask.size(0), CV_8UC1,cvScalar(255));
+		std::vector<std::vector<Point2f>> vect2D;
+		std::vector<std::vector<Point3f>> vect3D;
+		std::vector<Point2f> Points2D;
+		std::vector<Point3f> Points3D;
 		//media resolución
 		for (int y = 0; y<mask.size(1) - 1; y+=compresion)
 		{
@@ -654,6 +675,18 @@ public:
 				if (mask.cell(x, y) && mask.cell(x + compresion, y) && mask.cell(x + compresion, y + compresion) &&
 					!distorted(index.cell(x, y), index.cell(x + compresion, y), index.cell(x + compresion, y + compresion), result))
 				{
+					int indexes = index.cell(x, y);
+					//if (x % 10 == 0 && y % 10 == 0)
+					//{
+					int iX = proDisorted[(int)horizontal.cell(x, y)][(int)vertical.cell(x, y)].x;
+					int iY = proDisorted[(int)horizontal.cell(x, y)][(int)vertical.cell(x, y)].y;
+						Points2D.push_back(Point2f(iX,iY));
+						Points3D.push_back(Point3f(result[indexes][0] * 100.0f, result[indexes][1] * 100.0f, result[indexes][2] * 100.0f));
+					//}
+					//cercano = 120;
+					//lejano = 10;
+					float valor = (result[indexes][2])*255.0f/(lejano);
+					depth.at<uchar>(y, x) = (uchar)valor;
 					face.push_back(make_vector(index.cell(x, y), index.cell(x + compresion, y + compresion), index.cell(x + compresion, y)));
 					texture_coords.push_back(make_vector((double)x / mask.size(0), (double)(mask.size(1) - y) / mask.size(1)));
 				}
@@ -667,6 +700,81 @@ public:
 
 			}
 		}
+		cv::Size2i s(1024, 768);
+		vect2D.push_back(Points2D);
+		vect3D.push_back(Points3D);
+		Mat1d cameraMatrix = (Mat1d(3, 3) <<
+			matKpro(0,0), 0, matKpro(2,0),
+			0, matKpro(1,1), matKpro(2,1),
+			0, 0, 1);
+		//Mat cameraMatrix = Mat::eye(3, 3, CV_64F);
+		cv::Mat distCoeffs = Mat::zeros(8, 1, CV_64F);
+		std::vector<cv::Mat> rvecs;
+		std::vector<cv::Mat> tvecs;
+		double resultCalib = -1;
+		int flags =
+			CV_CALIB_USE_INTRINSIC_GUESS |
+			CV_CALIB_FIX_ASPECT_RATIO |
+			CV_CALIB_FIX_K1 |
+			CV_CALIB_FIX_K2 |
+			CV_CALIB_FIX_K3 |
+			CV_CALIB_FIX_K4 |
+			CV_CALIB_FIX_K5 |
+			CV_CALIB_ZERO_TANGENT_DIST;
+		try
+		{
+			resultCalib = cv::calibrateCamera(vect3D, vect2D, s, cameraMatrix, distCoeffs, rvecs, tvecs, flags);// CV_CALIB_USE_INTRINSIC_GUESS);
+		}
+		catch (exception e)
+		{
+			cout <<endl<< e.what() << endl;
+		}
+		cout << "Resultado de calibracion: " << resultCalib << endl;
+		for (int i = 0; i < cameraMatrix.rows; i++)
+		{
+			for (int j = 0; j < cameraMatrix.cols; j++)
+				cout << cameraMatrix.at<double>(i, j) << "\t";
+			cout << endl;
+		}
+		cout << endl << "rotacion" << endl;
+		Mat rot = rvecs[0];
+		Mat tra = tvecs[0];
+		
+		for (int i = 0; i < rot.rows; i++)
+		{
+			for (int j = 0; j < rot.cols; j++)
+				cout << rvecs[0].at<double>(i, j) << "\t";
+			cout << endl;
+		}
+		cout << endl << "traslación" << endl;
+		cout << tra.at<double>(0, 0) << "\t" << tra.at<double>(1, 0) << "\t" << tra.at<double>(2, 0) << endl;
+		
+		Mat rot3x3;
+		if (rot.rows == 3 && rot.cols == 3) {
+			rot3x3 = rot;
+		}
+		else {
+			Rodrigues(rot, rot3x3);
+		}
+		double* rm = rot3x3.ptr<double>(0);
+		double* tm = tra.ptr<double>(0);
+		double data[16] = { rm[0], rm[3], rm[6], 0.0f,
+			rm[1], rm[4], rm[7], 0.0f,
+			rm[2], rm[5], rm[8], 0.0f,
+			tm[0], tm[1], tm[2], 1.0f
+		};
+
+		cout << "Transform:"<<endl;
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				recalib.at<double>(i, j) = data[4 * i + j];
+				cout << recalib.at<double>(i, j) << "\t";
+			}
+			cout << endl;
+		}
+
 		//vertex_normals = GenerateVertexNormalsFromVertices(face, result);
 		vertices = result;
 
@@ -680,8 +788,28 @@ public:
 			vertices[i][2] = tempZ;
 		}
 		*/
-		return 0;
+		return depth;
 	}
+	Mat makeMatrix(Mat rotation, Mat translation)
+	{
+		Mat rot3x3;
+		if (rotation.rows == 3 && rotation.cols == 3) {
+			rot3x3 = rotation;
+		}
+		else {
+			Rodrigues(rotation, rot3x3);
+		}
+		double* rm = rot3x3.ptr<double>(0);
+		double* tm = translation.ptr<double>(0);
+		double data[16] = {rm[0], rm[3], rm[6], 0.0f,
+			rm[1], rm[4], rm[7], 0.0f,
+			rm[2], rm[5], rm[8], 0.0f,
+			tm[0], tm[1], tm[2], 1.0f
+	};
+		Mat retorno(4, 4, CV_64FC1,data);
+		return retorno;
+	}
+
 
 	vector<CVector<3, double>> GenerateVertexNormalsFromVertices(vector<CVector<3, int>> triangles, vector<CVector<3, double>> vertices)
 

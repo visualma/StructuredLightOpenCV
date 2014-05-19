@@ -54,6 +54,7 @@ namespace calibrate {
 		double m_cam_dist, m_proj_dist, m_fvoX, m_fvoY;
 		Mat* m_frame;
 		Mat* m_mProjMatrix;
+		Mat* m_recalibMatrix;
 
 	private: System::Windows::Forms::ToolStripMenuItem^  startCaptureToolStripMenuItem;
 	private: System::Windows::Forms::TabControl^  tabControl1;
@@ -686,7 +687,8 @@ namespace calibrate {
 				 m_proj_int = new slib::CMatrix<3, 3, double>;
 				 m_proj_ext = new slib::CMatrix<3, 4, double>;
 				 m_frame = new Mat();
-				 m_mProjMatrix = new Mat();
+				 m_mProjMatrix = new Mat(4,4,CV_64FC1);
+				 m_recalibMatrix = new Mat();
 				 comboBoxThress->SelectedIndex = 2;
 				 comboBoxWebcam->SelectedIndex = 0;
 				 comboBoxCompresion->SelectedIndex = 1;
@@ -906,7 +908,6 @@ namespace calibrate {
 					*thress = 0.1 * comboBoxThress->SelectedIndex;
 					bool captura = m_decoder->Decode(thress, m_Cap->m_vCaptures);
 					delete thress;
-					delete thress;
 					 if (captura)
 					 {
 						 Mat b,c;
@@ -941,7 +942,6 @@ namespace calibrate {
 				 {
 					 m_bShowWebcam = false;
 				 }
-				 //m_Cap->tryCamera(0);
 	}
 
 	private: System::Void backgroundWorker1_DoWork(System::Object^  sender, System::ComponentModel::DoWorkEventArgs^  e)
@@ -958,10 +958,13 @@ namespace calibrate {
 						 m_bShowWebcam = false;
 						 break;
 					 }
-					 if (camBusy||!m_bShowWebcam) continue;
+					 if (camBusy || !m_bShowWebcam || !m_Cap->m_VideoCapture.isOpened()) continue;
+					 
 					 try
 					 {
+						 //camBusy = true;
 						 m_Cap->m_VideoCapture >> mFrame;
+						 //camBusy = false;
 						 if (mFrame.empty()) continue;
 						 m_frame = &mFrame;
 						 //frame = cvCloneImage(&(IplImage)mFrame);
@@ -1143,7 +1146,7 @@ namespace calibrate {
 					 float ci = rodrigues.at<double>(2, 0);
 					 float di = sqrt(ai*ai + bi*bi + ci*ci);
 					 di = di * 180.0f / CV_PI;
-					 printf("Rod %f %f %f %f",ai,bi,ci,di);
+					 printf("Rod %f %f %f %f", ai, bi, ci, di);
 					 *m_mProjMatrix = cameraMatrix;
 
 					 System::IO::StreamWriter^ file1 = gcnew System::IO::StreamWriter(filename->Remove(filename->Length - 4) + "-Ext.txt");
@@ -1156,64 +1159,58 @@ namespace calibrate {
 					 file1->Write("\n");
 					 file1->Write("\tz: ");
 					 file1->Write(trans.at<double>(2, 0).ToString());
-
-					 /*
-					 file1->Write("\ntransform matrix (in world units):\n");
-					 file1->Write(rotMatrix.at<double>(0, 0).ToString());
-					 file1->Write("\n");
-					 file1->Write(rotMatrix.at<double>(1, 0).ToString());
-					 file1->Write("\n");
-					 file1->Write(rotMatrix.at<double>(2, 0).ToString());
-					 file1->Write("\n0\n");
-					 file1->Write(rotMatrix.at<double>(1, 0).ToString());
-					 file1->Write("\n");
-					 file1->Write(rotMatrix.at<double>(1, 1).ToString());
-					 file1->Write("\n");
-					 file1->Write(rotMatrix.at<double>(1, 2).ToString());
-					 file1->Write("\n0\n");
-					 file1->Write(rotMatrix.at<double>(2, 0).ToString());
-					 file1->Write("\n");
-					 file1->Write(rotMatrix.at<double>(2, 1).ToString());
-					 file1->Write("\n");
-					 file1->Write(rotMatrix.at<double>(2, 2).ToString());
-					 file1->Write("\n0\n");
-					 file1->Write(trans.at<double>(0, 0).ToString());
-					 file1->Write("\n");
-					 file1->Write(trans.at<double>(1, 0).ToString());
-					 file1->Write("\n");
-					 file1->Write(trans.at<double>(2, 0).ToString());
-					 file1->Write("\n");
-					 file1->Write(trans.at<double>(3, 0).ToString());
-					 */
-					 double* rm = rotMatrix.ptr<double>(0);
-					 file1->Write("\ntransform matrix (in world units):\n");
-					 file1->Write(rm[0].ToString());
-					 file1->Write("\n");
-					 file1->Write(rm[3].ToString());
-					 file1->Write("\n");
-					 file1->Write(rm[6].ToString());
-					 file1->Write("\n0\n");
-					 file1->Write(rm[1].ToString());
-					 file1->Write("\n");
-					 file1->Write(rm[4].ToString());
-					 file1->Write("\n");
-					 file1->Write(rm[7].ToString());
-					 file1->Write("\n0\n");
-					 file1->Write(rm[2].ToString());
-					 file1->Write("\n");
-					 file1->Write(rm[5].ToString());
-					 file1->Write("\n");
-					 file1->Write(rm[8].ToString());
-					 file1->Write("\n0\n");
-					 file1->Write(trans.at<double>(0, 0).ToString());
-					 file1->Write("\n");
-					 file1->Write(trans.at<double>(1, 0).ToString());
-					 file1->Write("\n");
-					 file1->Write(trans.at<double>(2, 0).ToString());
-					 file1->Write("\n");
-					 file1->Write("1");// trans.at<double>(3, 0).ToString());
-
-					 file1->Write("\naxis-angle rotation (in degrees):\n");
+					 /*if (m_renderer->vertices.size() != 0)
+					 {
+						 double* tm = (*m_recalibMatrix).ptr<double>(0);
+						 file1->Write("\ntransform matrix (in world units):\n");
+						 for (int j = 0; j < m_recalibMatrix->cols; j++)
+						 for (int i = 0; i < m_recalibMatrix->rows; i++)
+						 {
+							 file1->Write(m_recalibMatrix->at<double>(i,j).ToString());
+							 file1->Write("\n");
+						 }
+					 }*/
+					 if (m_renderer->vertices.size() != 0)
+					 {
+						 double* tm = (*m_recalibMatrix).ptr<double>(0);
+						 file1->Write("\ntransform matrix (in world units):\n");
+						 for (int i = 0; i < 16; i++)
+						 {
+							 file1->Write(tm[i].ToString());
+							 file1->Write("\n");
+						 }
+					 }
+					 else
+					 {
+						 double* rm = rotMatrix.ptr<double>(0);
+						 file1->Write("\ntransform matrix (in world units):\n");
+						 file1->Write(rm[0].ToString());
+						 file1->Write("\n");
+						 file1->Write(rm[3].ToString());
+						 file1->Write("\n");
+						 file1->Write(rm[6].ToString());
+						 file1->Write("\n0\n");
+						 file1->Write(rm[1].ToString());
+						 file1->Write("\n");
+						 file1->Write(rm[4].ToString());
+						 file1->Write("\n");
+						 file1->Write(rm[7].ToString());
+						 file1->Write("\n0\n");
+						 file1->Write(rm[2].ToString());
+						 file1->Write("\n");
+						 file1->Write(rm[5].ToString());
+						 file1->Write("\n");
+						 file1->Write(rm[8].ToString());
+						 file1->Write("\n0\n");
+						 file1->Write(trans.at<double>(0, 0).ToString());
+						 file1->Write("\n");
+						 file1->Write(trans.at<double>(1, 0).ToString());
+						 file1->Write("\n");
+						 file1->Write(trans.at<double>(2, 0).ToString());
+						 file1->Write("\n");
+						 file1->Write("1");// trans.at<double>(3, 0).ToString());
+					 }
+					 file1->Write("axis-angle rotation (in degrees):\n");
 					 file1->Write("\taxis x: ");
 					 file1->Write(ai.ToString());
 					 file1->Write("\n\taxis y: ");
@@ -1367,8 +1364,41 @@ namespace calibrate {
 					 for (int j = 0; j < a.rows; j++)
 						 m_phase_map[k].cell(i, j) = a.at<ushort>(j, i);
 				 }
+				 Mat c(4, 4, CV_64FC1);
+				 Mat a = m_renderer->makeTriangulation(*m_opt, m_phase_map[0], m_phase_map[1], m_mask, *m_proj_int, *m_cam_int, *m_proj_ext, m_proj_dist, m_cam_dist,comboBoxCompresion->SelectedIndex+1,c);
+				 for (int i = 0; i < c.rows; i++)
+				 {
+					 for (int j = 0; j < c.cols; j++)
+					 {
+						 cout << c.at<double>(i, j) << "\t";
+					 }
+					 cout << endl;
+				 }
+				 *m_recalibMatrix = c;
+				 /*
+				 int histSize = 256;
 
-				 m_renderer->makeTriangulation(*m_opt, m_phase_map[0], m_phase_map[1], m_mask, *m_proj_int, *m_cam_int, *m_proj_ext, m_proj_dist, m_cam_dist,comboBoxCompresion->SelectedIndex+1);
+				 /// Set the ranges ( for B,G,R) )
+				 float range[] = { 0, 256 };
+				 const float* histRange = { range };
+
+				 bool uniform = true; bool accumulate = false;
+
+				 Mat dest;
+
+				 /// Compute the histograms:
+				 calcHist(&a, 1, 0, Mat(), dest, 1, &histSize, &histRange, uniform, accumulate);
+				 int hist_w = 512; int hist_h = 400;
+				 int bin_w = cvRound((double)hist_w / histSize);
+				 Mat histImage(hist_h, hist_w, CV_8UC3, Scalar(0, 0, 0));
+				 normalize(dest, dest, 0, histImage.rows, NORM_MINMAX, -1, Mat());
+				 for (int i = 1; i < histSize; i++)
+					 line(histImage, cvPoint(bin_w*(i - 1), hist_h - cvRound(dest.at<float>(i - 1))),
+						 cvPoint(bin_w*(i), hist_h - cvRound(dest.at<float>(i))),
+						 Scalar(255, 0, 0), 2, 8, 0);
+				 imshow("Histograma",histImage);
+				 imshow("profundidad", a);
+				 */
 				 MessageBox::Show("Triangulation ready.",
 					 "Triangulation", MessageBoxButtons::OK,MessageBoxIcon::Asterisk);
 	}
