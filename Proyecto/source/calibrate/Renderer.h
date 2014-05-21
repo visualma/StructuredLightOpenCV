@@ -746,9 +746,9 @@ public:
 				cout << rvecs[0].at<double>(i, j) << "\t";
 			cout << endl;
 		}
-		cout << endl << "traslación" << endl;
+		cout << endl << "traslacion" << endl;
 		cout << tra.at<double>(0, 0) << "\t" << tra.at<double>(1, 0) << "\t" << tra.at<double>(2, 0) << endl;
-		
+		cout << endl << "Matriz de Transformacion " << endl;
 		Mat rot3x3;
 		if (rot.rows == 3 && rot.cols == 3) {
 			rot3x3 = rot;
@@ -777,6 +777,10 @@ public:
 
 		//vertex_normals = GenerateVertexNormalsFromVertices(face, result);
 		vertices = result;
+
+		for (int i = 0; i < 1024; i++)
+			delete[] proDisorted[i];
+		delete[] proDisorted;
 
 		/*
 		//Rotate X for OBJ model;

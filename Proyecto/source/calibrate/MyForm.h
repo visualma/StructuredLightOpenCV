@@ -1210,7 +1210,7 @@ namespace calibrate {
 						 file1->Write("\n");
 						 file1->Write("1");// trans.at<double>(3, 0).ToString());
 					 }
-					 file1->Write("axis-angle rotation (in degrees):\n");
+					 file1->Write("\naxis-angle rotation (in degrees):\n");
 					 file1->Write("\taxis x: ");
 					 file1->Write(ai.ToString());
 					 file1->Write("\n\taxis y: ");
@@ -1366,6 +1366,7 @@ namespace calibrate {
 				 }
 				 Mat c(4, 4, CV_64FC1);
 				 Mat a = m_renderer->makeTriangulation(*m_opt, m_phase_map[0], m_phase_map[1], m_mask, *m_proj_int, *m_cam_int, *m_proj_ext, m_proj_dist, m_cam_dist,comboBoxCompresion->SelectedIndex+1,c);
+				 /*
 				 for (int i = 0; i < c.rows; i++)
 				 {
 					 for (int j = 0; j < c.cols; j++)
@@ -1374,6 +1375,7 @@ namespace calibrate {
 					 }
 					 cout << endl;
 				 }
+				 */
 				 *m_recalibMatrix = c;
 				 /*
 				 int histSize = 256;
