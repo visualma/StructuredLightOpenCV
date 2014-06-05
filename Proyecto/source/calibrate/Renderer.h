@@ -568,6 +568,9 @@ public:
 		float lejano = 0,cercano = 10e7;
 		//printf("Angulo de distorcion: %f, se guadara en %s", m_distortion_angle, m_plyfilename);
 		Point2f** proDisorted = new Point2f*[1024];
+		Point2f** camDisorted = new Point2f*[640];
+		for (int i = 0; i < 640; i++)
+			camDisorted[i] = new Point2f[480];
 		for (int i = 0; i < 1024; i++)
 			proDisorted[i] = new Point2f[768];
 		try
@@ -609,7 +612,7 @@ public:
 
 						// camra coordinate
 						slib::fmatrix::CancelRadialDistortion(xi2, cod2, make_vector<double>(x, y), p2d[0]);
-
+						camDisorted[x][y] = Point2f(p2d[0][0], p2d[0][1]);
 						// projector coordinate
 						double proj_y;
 						if (m_vmapfilename)
@@ -687,6 +690,8 @@ public:
 					//lejano = 10;
 					float valor = (result[indexes][2])*255.0f/(lejano);
 					depth.at<uchar>(y, x) = (uchar)valor;
+					int cX = camDisorted[x][y].x;
+					int cY = camDisorted[x][y].y;
 					face.push_back(make_vector(index.cell(x, y), index.cell(x + compresion, y + compresion), index.cell(x + compresion, y)));
 					texture_coords.push_back(make_vector((double)x / mask.size(0), (double)(mask.size(1) - y) / mask.size(1)));
 				}
@@ -704,8 +709,8 @@ public:
 		vect2D.push_back(Points2D);
 		vect3D.push_back(Points3D);
 		Mat1d cameraMatrix = (Mat1d(3, 3) <<
-			matKpro(0,0), 0, matKpro(2,0),
-			0, matKpro(1,1), matKpro(2,1),
+			matKpro(0,0), 0, /*matKpro(2,0)*/512.0f,
+			0, matKpro(1,1), /*matKpro(2,1)*/384.0f,
 			0, 0, 1);
 		//Mat cameraMatrix = Mat::eye(3, 3, CV_64F);
 		cv::Mat distCoeffs = Mat::zeros(8, 1, CV_64F);
@@ -718,8 +723,6 @@ public:
 			CV_CALIB_FIX_K1 |
 			CV_CALIB_FIX_K2 |
 			CV_CALIB_FIX_K3 |
-			CV_CALIB_FIX_K4 |
-			CV_CALIB_FIX_K5 |
 			CV_CALIB_ZERO_TANGENT_DIST;
 		try
 		{
@@ -770,18 +773,21 @@ public:
 			for (int j = 0; j < 4; j++)
 			{
 				recalib.at<double>(i, j) = data[4 * i + j];
-				cout << recalib.at<double>(i, j) << "\t";
+				//cout << recalib.at<double>(i, j) << "\t";
 			}
 			cout << endl;
 		}
 
 		//vertex_normals = GenerateVertexNormalsFromVertices(face, result);
 		vertices = result;
-
+		/*
 		for (int i = 0; i < 1024; i++)
 			delete[] proDisorted[i];
 		delete[] proDisorted;
-
+		for (int i = 0; i < 640; i++)
+			delete[] proDisorted[i];
+		delete[] proDisorted;
+		
 		/*
 		//Rotate X for OBJ model;
 		for (int i = 0; i < vertices.size(); i++)

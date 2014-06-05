@@ -8,10 +8,10 @@
     <val_0>0</val_0>
 </backgroundColor>
 <drawMode>
-    <val_0>3</val_0>
+    <val_0>0</val_0>
 </drawMode>
 <shading>
-    <val_0>0</val_0>
+    <val_0>1</val_0>
 </shading>
 <saveCalibration>
     <val_0>0</val_0>
@@ -23,7 +23,7 @@
     <val_0>0</val_0>
 </highlightPosition>
 <highlightOffset>
-    <val_0>0.1</val_0>
+    <val_0>0.0777778</val_0>
 </highlightOffset>
 <aov>
     <val_0>80</val_0>
@@ -71,13 +71,13 @@
     <val_0>12</val_0>
 </selectionRadius>
 <lightX>
-    <val_0>200</val_0>
+    <val_0>369.956</val_0>
 </lightX>
 <lightY>
-    <val_0>400</val_0>
+    <val_0>454.814</val_0>
 </lightY>
 <lightZ>
-    <val_0>800</val_0>
+    <val_0>-101.852</val_0>
 </lightZ>
 <randomLighting>
     <val_0>0</val_0>
@@ -92,7 +92,7 @@
     <val_0>0</val_0>
 </hoverSelected>
 <hoverChoice>
-    <val_0>9206</val_0>
+    <val_0>1619</val_0>
 </hoverChoice>
 <selected>
     <val_0>0</val_0>
@@ -104,7 +104,7 @@
     <val_0>0</val_0>
 </arrowing>
 <selectionChoice>
-    <val_0>9206</val_0>
+    <val_0>1619</val_0>
 </selectionChoice>
 <slowLerpRate>
     <val_0>0.001</val_0>

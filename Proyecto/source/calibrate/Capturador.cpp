@@ -8,6 +8,7 @@
 #include <fstream>
 #include <io.h>
 #include <fcntl.h>
+#include "opencv2\opencv.hpp"
 
 void delay(int secs) {
 	for (int i = (time(NULL) + secs); time(NULL) != i; time(NULL));
@@ -131,6 +132,19 @@ bool CCapturador::CapturePatterns(int time,int device,int posX,int posY,bool use
 			A = GetTickCount();
 		};
 	}
+	Mat promedio;
+	Mat blanco = Mat(m_vPatterns[0].size(), CV_8UC3, cv::Scalar(255,255,255));
+	imshow("Patrones", blanco);
+	Mat suma = Mat(m_mTextura.rows, m_mTextura.cols, CV_32FC3, double(0));
+	cvWaitKey(250);
+	for (int i = 0; i < 100; i++)
+	{
+		m_VideoCapture >> promedio;
+		accumulateWeighted(promedio, suma, .01);
+	}
+	convertScaleAbs(suma,m_mTextura);
+	promedio.release();
+	suma.release();
 	cout << "Patrones capturados." << endl;
 	cvDestroyWindow("Patrones");
 	//cvDestroyWindow("Camera");

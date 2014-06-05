@@ -1,42 +1,42 @@
 position (in world units):
-	x: -85.74
-	y: -56.46
-	z: -26.14
+	x: -99.09
+	y: -8.04
+	z: 1.51
 transform matrix (in world units):
-1.00
+0.98
 0.01
--0.08
+-0.19
 0
--0.01
-1.00
-0.03
+0.02
+0.98
+0.18
 0
-0.08
--0.03
-1.00
+0.19
+-0.18
+0.97
 0
--85.74
--56.46
--26.14
+-99.09
+-8.04
+1.51
 1
 axis-angle rotation (in degrees):
-	axis x: 0.34
-	axis y: 0.93
-	axis z: 0.10
-	angle: 5.21
+	axis x: 0.69
+	axis y: 0.72
+	axis z: -0.03
+	angle: 15.06
 euler rotation (in degrees):
-	x: 0.58
-	y: 4.86
-	z: 1.76
+	x: 0.60
+	y: 10.85
+	z: 10.39
 fov (in degrees):
-	horizontal: 41.28
-	vertical: 31.55
+	horizontal: 30.64
+	vertical: 23.22
 principal point (in screen units):
-	x: 529.22
-	y: 590.66
+	x: 549.55
+	y: 758.08
 image size (in pixels):
-	x: 529.22
-	y: 590.66
-cameraMatrix[1359.105940107096, 0, 529.2205799119454;
-  0, 1359.105940107096, 590.6617050584337;
+	x: 561.55
+	y: 765.08
+cameraMatrix[1868.854105936248, 0, 561.5452437506125;
+  0, 1868.854105936248, 765.0777070026152;
   0, 0, 1]
