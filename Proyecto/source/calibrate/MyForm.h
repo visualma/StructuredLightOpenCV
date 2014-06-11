@@ -695,9 +695,9 @@ namespace calibrate {
 				 comboBoxCompresion->SelectedIndex = 1;
 	}
 	private: System::Void MyForm_FormClosing(System::Object^  sender, System::Windows::Forms::FormClosingEventArgs^  e) {
-				 m_bShowWebcam = false;
 				 if (m_Cap->m_VideoCapture.isOpened())
 					 m_Cap->m_VideoCapture.release();
+				 m_bShowWebcam = false;
 				 delete m_options;
 				 delete m_Cap;
 				 delete m_renderer;
@@ -952,7 +952,7 @@ namespace calibrate {
 				 if (!m_Cap->m_VideoCapture.isOpened())  // check if we succeeded
 				 {
 					 m_Cap->m_VideoCapture = VideoCapture(camDevice);
-					 //m_Cap->m_VideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
+					 m_Cap->m_VideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, 640);
 					 //m_Cap->m_VideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, 768);
 
 				 }
@@ -970,9 +970,10 @@ namespace calibrate {
 					// try
 					// {
 						 //camBusy = true;
+					 if (!mFrame.empty()) continue;
 						 m_Cap->m_VideoCapture >> mFrame;
 						 //camBusy = false;
-						 if (mFrame.empty()) continue;
+					 if (mFrame.empty()) continue;
 						 m_frame = &mFrame;
 						 //frame = cvCloneImage(&(IplImage)mFrame);
 						 worker->ReportProgress(1);
@@ -988,7 +989,7 @@ namespace calibrate {
 				 //pin_ptr<IplImage*> p;
 				 //p = &frame;
 				 //cvReleaseImage(p);
-				 m_Cap->m_VideoCapture.release();
+				 //m_Cap->m_VideoCapture.release();
 	}
 
 	private: System::Void backgroundWorker1_ProgressChanged(System::Object^  sender, System::ComponentModel::ProgressChangedEventArgs^  e) {
